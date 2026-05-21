@@ -9,11 +9,19 @@ const pd = createBackendClient({
   projectId: process.env.PIPEDREAM_PROJECT_ID,
 });
 
-export async function createConnectToken(externalUserId) {
-  const { token, expires_at, connect_link_url } = await pd.createConnectToken({
-    external_user_id: externalUserId,
-  });
-  return { token, expiresAt: expires_at, connectLinkUrl: connect_link_url };
+export async function createConnectToken(externalUserId, app) {
+  const payload = { external_user_id: externalUserId };
+  if (app) payload.allowed_origins = undefined; // pass through
+  const result = await pd.createConnectToken(payload);
+  const token = result.token;
+  const expiresAt = result.expires_at;
+  // Build connect URL — Pipedream needs the app slug in the URL when not using the embedded SDK.
+  let connectLinkUrl = result.connect_link_url || `https://pipedream.com/_static/connect.html?token=${token}`;
+  if (app && !connectLinkUrl.includes("app=")) {
+    const sep = connectLinkUrl.includes("?") ? "&" : "?";
+    connectLinkUrl = `${connectLinkUrl}${sep}app=${encodeURIComponent(app)}`;
+  }
+  return { token, expiresAt, connectLinkUrl };
 }
 
 export async function listAccountsForUser(externalUserId) {

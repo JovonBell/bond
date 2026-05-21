@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pulse — Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/@pipedream/sdk/dist/iife/index.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
@@ -16,9 +15,13 @@
     .panel { background: #161616; border: 1px solid #2a2a2a; padding: 24px; border-radius: 12px; margin-bottom: 16px; }
     .panel h2 { margin: 0 0 12px; font-size: 20px; }
     .panel p { color: #999; margin: 0 0 16px; line-height: 1.5; }
-    .btn { display: inline-block; background: #fff; color: #000; padding: 10px 20px; border-radius: 6px;
-           text-decoration: none; font-weight: 600; border: none; cursor: pointer; font-size: 15px; }
-    .btn:hover { background: #ddd; }
+    .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    .app-btn { background: #1f1f1f; color: #fff; border: 1px solid #333; padding: 10px 14px; border-radius: 6px;
+               cursor: pointer; font-size: 14px; text-align: left; }
+    .app-btn:hover { background: #2a2a2a; border-color: #555; }
+    .custom { display: flex; gap: 8px; margin-top: 12px; }
+    .custom input { flex: 1; background: #0a0a0a; border: 1px solid #333; color: #fff; padding: 10px 12px; border-radius: 6px; font-size: 14px; }
+    .custom button { background: #fff; color: #000; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
     .accounts { list-style: none; padding: 0; margin: 16px 0 0; }
     .accounts li { background: #0a0a0a; border: 1px solid #2a2a2a; padding: 10px 14px; border-radius: 6px; margin-bottom: 6px;
                    display: flex; justify-content: space-between; }
@@ -34,9 +37,25 @@
 
     <div class="panel">
       <h2>Connect a tool</h2>
-      <p>Authorize Gmail, Google Calendar, Notion, Linear, HubSpot, or any of 7,000+ apps via Pipedream Connect.
-        Once authorized, mention what you want done in Slack and Pulse will know which tool to use.</p>
-      <button class="btn" id="connectBtn">Connect a tool</button>
+      <p>Pick an app to authorize. Pipedream handles the OAuth — you'll be redirected to that tool's login.</p>
+      <div class="apps">
+        <button class="app-btn" data-app="gmail">Gmail</button>
+        <button class="app-btn" data-app="google_calendar">Google Calendar</button>
+        <button class="app-btn" data-app="google_drive">Google Drive</button>
+        <button class="app-btn" data-app="slack">Slack</button>
+        <button class="app-btn" data-app="notion">Notion</button>
+        <button class="app-btn" data-app="linear">Linear</button>
+        <button class="app-btn" data-app="hubspot">HubSpot</button>
+        <button class="app-btn" data-app="github">GitHub</button>
+        <button class="app-btn" data-app="fathom">Fathom</button>
+        <button class="app-btn" data-app="stripe">Stripe</button>
+        <button class="app-btn" data-app="airtable">Airtable</button>
+        <button class="app-btn" data-app="zoom">Zoom</button>
+      </div>
+      <div class="custom">
+        <input id="customApp" placeholder="or type any other app slug (e.g. asana, jira, salesforce)" />
+        <button id="customBtn">Connect</button>
+      </div>
       <ul class="accounts" id="accounts"></ul>
     </div>
 
@@ -47,7 +66,7 @@
          3. Ask it anything. It remembers across conversations.</p>
     </div>
 
-    <p class="muted">v0 — ugly but working. dm <a href="mailto:joshua@profitprocesses.com">joshua@profitprocesses.com</a> if it breaks.</p>
+    <p class="muted">v0 — ugly but working.</p>
   </div>
 
   <script>
@@ -61,29 +80,43 @@
     }
 
     async function refreshAccounts() {
-      const r = await fetch(`/api/pipedream/accounts?externalUserId=${externalUserId}`);
-      const { accounts = [] } = await r.json();
-      const ul = document.getElementById("accounts");
-      ul.innerHTML = accounts.length === 0
-        ? '<li class="muted">No tools connected yet.</li>'
-        : accounts.map(a => `<li><b>${a.app?.name || a.app_slug || "tool"}</b><span class="muted">${a.id}</span></li>`).join("");
+      try {
+        const r = await fetch(`/api/pipedream/accounts?externalUserId=${externalUserId}`);
+        const { accounts = [] } = await r.json();
+        const ul = document.getElementById("accounts");
+        ul.innerHTML = accounts.length === 0
+          ? '<li class="muted">No tools connected yet.</li>'
+          : accounts.map(a => `<li><b>${a.app?.name_slug || a.app?.name || a.app_slug || "tool"}</b><span class="muted">${a.id}</span></li>`).join("");
+      } catch (e) {
+        console.error(e);
+      }
     }
 
-    document.getElementById("connectBtn").addEventListener("click", async () => {
-      const r = await fetch("/api/pipedream/connect-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ externalUserId }),
-      });
-      const { token, connectLinkUrl } = await r.json();
-      if (window.pipedream?.createFrontendClient) {
-        const client = window.pipedream.createFrontendClient();
-        await client.connectAccount({ token, onSuccess: refreshAccounts });
-      } else if (connectLinkUrl) {
+    async function connect(appSlug) {
+      try {
+        const r = await fetch("/api/pipedream/connect-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ externalUserId, app: appSlug }),
+        });
+        const { connectLinkUrl, error } = await r.json();
+        if (error) { alert("Error: " + error); return; }
+        if (!connectLinkUrl) { alert("No connect URL returned."); return; }
+        // Open in same window so user can return and refresh
         window.open(connectLinkUrl, "_blank");
-      } else {
-        alert("Could not open Pipedream Connect modal.");
+        // Refresh in a few seconds in case they finish quickly
+        setTimeout(refreshAccounts, 5000);
+      } catch (e) {
+        alert("Network error: " + e.message);
       }
+    }
+
+    document.querySelectorAll(".app-btn").forEach(btn => {
+      btn.addEventListener("click", () => connect(btn.dataset.app));
+    });
+    document.getElementById("customBtn").addEventListener("click", () => {
+      const slug = document.getElementById("customApp").value.trim();
+      if (slug) connect(slug);
     });
 
     refreshAccounts();

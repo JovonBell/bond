@@ -105,7 +105,8 @@ expressApp.get("/dashboard", (_req, res) =>
 expressApp.post("/api/pipedream/connect-token", async (req, res) => {
   try {
     const externalUserId = req.body?.externalUserId || `pulse-user-${Date.now()}`;
-    const { token, expiresAt, connectLinkUrl } = await createConnectToken(externalUserId);
+    const app = req.body?.app;
+    const { token, expiresAt, connectLinkUrl } = await createConnectToken(externalUserId, app);
     res.json({ token, expiresAt, connectLinkUrl, externalUserId });
   } catch (e) {
     console.error("[pulse] connect-token error", e);
