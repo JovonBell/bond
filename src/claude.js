@@ -202,9 +202,6 @@ ${slidesHtml}
 </html>`;
 }
 
-async function generateDeckId() {
-  return crypto.randomBytes(6).toString("hex");
-}
 
 async function executeRoutineTool(name, input, ctx) {
   const { teamId, userId } = ctx;
@@ -248,7 +245,9 @@ async function executeRoutineTool(name, input, ctx) {
     case "create_presentation": {
       const slides = String(input.slides_html || "").trim();
       if (!slides) return { ok: false, error: "slides_html is required and must contain at least one <section>...</section> block." };
-      const id = await generateDeckId();
+      const base = process.env.APP_URL;
+      if (!base) return { ok: false, error: "APP_URL env var is not set — cannot produce a shareable deck link. Tell the user to set APP_URL on the server." };
+      const id = crypto.randomBytes(6).toString("hex");
       const html = wrapDeckHtml(input.title, slides);
       const dir = path.join(process.cwd(), "public", "decks");
       try {
@@ -257,7 +256,6 @@ async function executeRoutineTool(name, input, ctx) {
       } catch (e) {
         return { ok: false, error: `Failed to write deck: ${e.message}` };
       }
-      const base = process.env.APP_URL || "";
       const url = `${base.replace(/\/$/, "")}/decks/${id}.html`;
       const slideCount = (slides.match(/<section[\s>]/gi) || []).length;
       return { ok: true, id, title: input.title, url, slides: slideCount };
