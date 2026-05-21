@@ -12,9 +12,10 @@ import {
   getRecentMessages,
   clearConversation,
   pingDb,
+  listRoutines,
 } from "./db.js";
 import { chat } from "./claude.js";
-import { createConnectToken, listAccountsForUser, invalidateAccountCache } from "./pipedream.js";
+import { createConnectToken, listAccountsForUser, listAccountsCached, invalidateAccountCache } from "./pipedream.js";
 import { startRunner, registerChat, registerMetricsHook } from "./routines.js";
 
 // ----- Global error handlers — keep the process alive on transient failures -----
@@ -54,6 +55,7 @@ const receiver = new ExpressReceiver({
     "im:write",
     "users:read",
     "commands",
+    "reactions:write",
   ],
   installationStore: {
     storeInstallation: async (install) => {
@@ -113,6 +115,101 @@ app.event("app_mention", async ({ event, say, client }) => {
     say,
     client,
   });
+});
+
+// ----- App Home tab — published whenever a user opens the Home tab -----
+app.event("app_home_opened", async ({ event, client }) => {
+  if (event.tab !== "home") return;
+  try {
+    const userId = event.user;
+    const teamId = event.view?.team_id || (await client.auth.test()).team_id;
+    const externalUserId = `slack:${teamId}:${userId}`;
+
+    const [routines, accounts] = await Promise.all([
+      listRoutines(teamId, userId).catch(() => []),
+      listAccountsCached(externalUserId).catch(() => []),
+    ]);
+    const activeRoutines = routines.filter((r) => r.enabled);
+    const connectedApps = [...new Set(accounts.map((a) => a.app?.name).filter(Boolean))];
+    const appUrl = (process.env.APP_URL || "").replace(/\/$/, "");
+
+    const blocks = [
+      {
+        type: "header",
+        text: { type: "plain_text", text: "✦  Pulse", emoji: true },
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "*Your AI coworker, always on.*\nDM me anything — I'll act across your connected tools and keep your routines running.",
+        },
+      },
+      { type: "divider" },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: connectedApps.length
+            ? `*🔌  Connected tools*\n${connectedApps.map((a) => `•  ${a}`).join("\n")}`
+            : "*🔌  Connected tools*\n_None yet — connect Gmail, Calendar, Notion, Linear and 7,000+ more from the dashboard._",
+        },
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: activeRoutines.length
+            ? `*⏰  Active routines (${activeRoutines.length})*\n${activeRoutines
+                .slice(0, 6)
+                .map((r) => `•  *${r.name}*  —  \`${r.cron_expr}\``)
+                .join("\n")}`
+            : '*⏰  Routines*\n_None yet. Try: "every weekday at 8am, brief me on overnight emails."_',
+        },
+      },
+      { type: "divider" },
+    ];
+
+    if (appUrl) {
+      blocks.push({
+        type: "actions",
+        elements: [
+          {
+            type: "button",
+            text: { type: "plain_text", text: "Open dashboard", emoji: true },
+            url: `${appUrl}/dashboard`,
+            style: "primary",
+            action_id: "open_dashboard",
+          },
+          {
+            type: "button",
+            text: { type: "plain_text", text: "Connect a tool", emoji: true },
+            url: `${appUrl}/dashboard`,
+            action_id: "connect_tool",
+          },
+        ],
+      });
+    }
+
+    blocks.push({
+      type: "context",
+      elements: [
+        {
+          type: "mrkdwn",
+          text: "Tip — open the *Messages* tab and just start typing. `/reset` wipes memory.",
+        },
+      ],
+    });
+
+    await client.views.publish({
+      user_id: userId,
+      view: { type: "home", blocks },
+    });
+  } catch (e) {
+    console.error("[pulse] app_home_opened error", e?.data?.error || e?.message);
+    bumpMetric("errors");
+    bumpMetric("lastError", { message: `app_home_opened: ${e?.message}`, at: new Date().toISOString() });
+  }
 });
 
 async function handleUserMessage({ teamId, userId, text, channel, ts, say, client }) {
