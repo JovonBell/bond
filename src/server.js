@@ -11,10 +11,33 @@ import {
   appendMessage,
   getRecentMessages,
   clearConversation,
+  pingDb,
 } from "./db.js";
 import { chat } from "./claude.js";
-import { createConnectToken, listAccountsForUser } from "./pipedream.js";
-import { startRunner, registerChat } from "./routines.js";
+import { createConnectToken, listAccountsForUser, invalidateAccountCache } from "./pipedream.js";
+import { startRunner, registerChat, registerMetricsHook } from "./routines.js";
+
+// ----- Global error handlers — keep the process alive on transient failures -----
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason?.message || reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("[uncaughtException]", err?.message || err);
+  // Don't exit — Railway will restart anyway if we do
+});
+
+// Simple in-process metrics for /status
+const metrics = {
+  startedAt: Date.now(),
+  messages: 0,
+  errors: 0,
+  routinesFired: 0,
+  lastError: null,
+};
+export function bumpMetric(name, val = 1) {
+  if (name === "lastError") metrics.lastError = val;
+  else metrics[name] = (metrics[name] || 0) + val;
+}
 
 const { App, ExpressReceiver } = bolt;
 
@@ -116,6 +139,7 @@ async function handleUserMessage({ teamId, userId, text, channel, ts, say, clien
 
   try {
     console.log(`[pulse] message from ${teamId}:${userId} — "${text.slice(0, 80)}"`);
+    metrics.messages++;
     const history = await getRecentMessages(teamId, userId, 20);
     await appendMessage(teamId, userId, "user", text);
     const externalUserId = `slack:${teamId}:${userId}`;
@@ -124,6 +148,8 @@ async function handleUserMessage({ teamId, userId, text, channel, ts, say, clien
     await say(reply);
   } catch (e) {
     console.error("[pulse] handler error", e);
+    metrics.errors++;
+    metrics.lastError = { message: e?.message, at: new Date().toISOString() };
     await say(`oof, something broke: ${e.message}`);
   } finally {
     if (reactionAdded && client && channel && ts) {
@@ -279,13 +305,50 @@ expressApp.get("/api/pipedream/accounts", async (req, res) => {
   }
 });
 
-expressApp.get("/healthz", (_req, res) => res.json({ ok: true }));
+expressApp.get("/healthz", async (_req, res) => {
+  try {
+    const dbMs = await pingDb();
+    res.json({ ok: true, dbMs });
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e?.message || "db down" });
+  }
+});
+
+// Detailed diagnostics for debugging
+expressApp.get("/status", async (_req, res) => {
+  const out = {
+    uptime_seconds: Math.round((Date.now() - metrics.startedAt) / 1000),
+    messages_handled: metrics.messages,
+    errors: metrics.errors,
+    routines_fired: metrics.routinesFired,
+    last_error: metrics.lastError,
+    memory_mb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+    node_version: process.version,
+    env: process.env.PIPEDREAM_ENVIRONMENT,
+    db: { ok: false, ms: null },
+  };
+  try {
+    out.db.ms = await pingDb();
+    out.db.ok = true;
+  } catch (e) {
+    out.db.error = e?.message;
+  }
+  res.json(out);
+});
+
+// Invalidate the Pipedream account cache for the current session (call after connecting a new tool)
+expressApp.post("/api/pipedream/invalidate-cache", (req, res) => {
+  const externalUserId = req.body?.externalUserId;
+  invalidateAccountCache(externalUserId);
+  res.json({ ok: true });
+});
 
 // ----- Boot -----
 const PORT = process.env.PORT || 3000;
 (async () => {
   await initSchema();
   registerChat(chat);
+  registerMetricsHook((name, val) => { if (name === "routinesFired") metrics.routinesFired += val; });
   startRunner();
   await app.start(PORT);
   console.log(`[pulse] running on :${PORT}`);

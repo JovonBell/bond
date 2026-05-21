@@ -31,6 +31,34 @@ export async function listAccountsForUser(externalUserId) {
   }
 }
 
+// In-memory cache (60s TTL) to avoid re-querying Pipedream on every Slack message
+const _accountCache = new Map();
+const ACCOUNT_TTL = 60_000;
+
+export async function listAccountsCached(externalUserId) {
+  const cached = _accountCache.get(externalUserId);
+  if (cached && Date.now() - cached.t < ACCOUNT_TTL) return cached.accounts;
+  const accounts = await listAccountsForUser(externalUserId);
+  _accountCache.set(externalUserId, { accounts, t: Date.now() });
+  return accounts;
+}
+
+export function invalidateAccountCache(externalUserId) {
+  if (externalUserId) _accountCache.delete(externalUserId);
+  else _accountCache.clear();
+}
+
+// Cache the access token too (Pipedream tokens are valid ~4 hours)
+let _tokenCache = null;
+const TOKEN_TTL = 30 * 60_000; // re-fetch every 30 min, well before 4hr expiry
+
+export async function getCachedAccessToken() {
+  if (_tokenCache && Date.now() - _tokenCache.t < TOKEN_TTL) return _tokenCache.token;
+  const token = await pd.rawAccessToken();
+  _tokenCache = { token, t: Date.now() };
+  return token;
+}
+
 // Returns the raw Pipedream developer access token to use as a Bearer token
 // when calling Pipedream's MCP server.
 export async function getAccessToken() {

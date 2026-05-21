@@ -828,6 +828,12 @@
               core.classList.add('thinking');
               setTimeout(() => core.classList.remove('thinking'), 1500);
               showToast(`✨ ${p.app.name} connected`, 2500);
+              // Bust the server-side cache so the bot picks this up on next message
+              fetch('/api/pipedream/invalidate-cache', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ externalUserId }),
+              }).catch(() => {});
             }
           }
         });

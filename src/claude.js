@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { getAccessToken, buildMcpUrl, listAccountsForUser } from "./pipedream.js";
+import { buildMcpUrl, listAccountsCached, getCachedAccessToken } from "./pipedream.js";
 import * as db from "./db.js";
 import { computeNextRun, validateCron } from "./routines.js";
 
@@ -233,11 +233,11 @@ function extractText(response) {
 async function buildPipedreamMcpConfig(externalUserId) {
   if (!externalUserId) return null;
   try {
-    const accounts = await listAccountsForUser(externalUserId);
+    const accounts = await listAccountsCached(externalUserId);
     if (!accounts.length) return null;
     const appSlugs = [...new Set(accounts.map((a) => a.app?.name_slug).filter(Boolean))];
     if (!appSlugs.length) return null;
-    const accessToken = await getAccessToken();
+    const accessToken = await getCachedAccessToken();
     const servers = appSlugs.map((slug) => ({
       type: "url",
       url: buildMcpUrl(externalUserId, slug),

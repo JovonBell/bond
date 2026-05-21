@@ -90,7 +90,11 @@ async function fireRoutine(routine) {
       unfurl_links: false,
       unfurl_media: false,
     });
+    if (metricsHook) metricsHook("routinesFired", 1);
   } catch (e) {
     console.error(`[routines] post failed`, e?.data?.error || e?.message);
   }
 }
+
+let metricsHook = null;
+export function registerMetricsHook(fn) { metricsHook = fn; }

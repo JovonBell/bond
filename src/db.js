@@ -1,12 +1,30 @@
 import pg from "pg";
 const { Pool } = pg;
 
+// SSL on for any non-localhost Postgres (Railway, prod, etc.)
+const isLocal = (process.env.DATABASE_URL || "").includes("localhost") ||
+                (process.env.DATABASE_URL || "").includes("127.0.0.1");
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes("railway")
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: isLocal ? false : { rejectUnauthorized: false },
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  allowExitOnIdle: false,
 });
+
+// Surface pool errors so they don't crash the process silently
+pool.on("error", (err) => {
+  console.error("[db] unexpected pool error:", err?.message);
+});
+
+// Healthcheck used by /healthz to verify DB is alive
+export async function pingDb() {
+  const start = Date.now();
+  await pool.query("SELECT 1");
+  return Date.now() - start;
+}
 
 export async function initSchema() {
   await pool.query(`
