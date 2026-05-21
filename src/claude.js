@@ -322,6 +322,17 @@ export async function chat({ history, newMessage, externalUserId }) {
       return extractText(fallback);
     }
 
+    // Log every MCP tool call + result Anthropic ran server-side so we can see
+    // what actually happened (errors otherwise vanish into Claude's paraphrase).
+    for (const block of response.content) {
+      if (block.type === "mcp_tool_use") {
+        console.log(`[mcp] tool_use server=${block.server_name} name=${block.name} input=${JSON.stringify(block.input).slice(0, 500)}`);
+      } else if (block.type === "mcp_tool_result") {
+        const contentStr = JSON.stringify(block.content).slice(0, 1000);
+        console.log(`[mcp] tool_result is_error=${block.is_error} content=${contentStr}`);
+      }
+    }
+
     if (response.stop_reason !== "tool_use") {
       return extractText(response) || "(no response)";
     }
