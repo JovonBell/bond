@@ -16,6 +16,7 @@ features:
 oauth_config:
   redirect_urls:
     - https://bond-production-efa5.up.railway.app/slack/oauth_redirect
+    - https://bond-production-efa5.up.railway.app/auth/slack/callback
   scopes:
     bot:
       - app_mentions:read
