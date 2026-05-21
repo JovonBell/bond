@@ -7,14 +7,13 @@
   <title>Pulse · Galaxy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #000;
       --bg-elev: #0A0A0A;
-      --bg-card: #111;
+      --bg-card: #0F0F0F;
       --border: #1A1A1A;
-      --border-hover: #2A2A2A;
       --text: #FAFAFA;
       --text-dim: #999;
       --text-muted: #525252;
@@ -23,77 +22,40 @@
       --green: #14F195;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; height: 100%; }
+    html, body { background: #000; color: var(--text); font-family: 'Inter', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; height: 100%; }
     body { position: relative; }
 
-    /* ====== STAR FIELD BACKGROUND ====== */
-    .stars, .stars2 {
-      position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    }
-    .stars { background-image:
-      radial-gradient(2px 2px at 20% 30%, #fff 0%, transparent 50%),
-      radial-gradient(1px 1px at 60% 70%, #fff 0%, transparent 50%),
-      radial-gradient(1px 1px at 50% 50%, #fff 0%, transparent 50%),
-      radial-gradient(2px 2px at 80% 10%, #fff 0%, transparent 50%),
-      radial-gradient(1px 1px at 40% 80%, #fff 0%, transparent 50%),
-      radial-gradient(1px 1px at 10% 60%, #fff 0%, transparent 50%),
-      radial-gradient(1px 1px at 90% 40%, #fff 0%, transparent 50%);
-      background-size: 600px 600px;
-      opacity: 0.45;
-      animation: drift 240s linear infinite;
-    }
-    .stars2 { background-image:
-      radial-gradient(1px 1px at 25% 25%, rgba(139,92,246,0.8) 0%, transparent 50%),
-      radial-gradient(1px 1px at 75% 75%, rgba(59,130,246,0.6) 0%, transparent 50%),
-      radial-gradient(1px 1px at 55% 35%, rgba(255,255,255,0.6) 0%, transparent 50%);
-      background-size: 400px 400px;
-      opacity: 0.5;
-      animation: drift 360s linear infinite reverse;
-    }
-    @keyframes drift {
-      from { transform: translate(0, 0); }
-      to { transform: translate(-600px, -300px); }
-    }
-
-    /* ====== NEBULA GLOW BEHIND CENTER ====== */
-    .nebula {
-      position: fixed; left: 50%; top: 50%;
-      width: 80vmin; height: 80vmin;
-      transform: translate(-50%, -50%);
-      background: radial-gradient(circle,
-        rgba(139, 92, 246, 0.35) 0%,
-        rgba(59, 130, 246, 0.15) 30%,
-        transparent 65%);
-      filter: blur(40px);
-      pointer-events: none;
-      z-index: 0;
-      animation: nebula-breathe 8s ease-in-out infinite;
-    }
-    @keyframes nebula-breathe {
-      0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+    /* ====== DEEP SPACE BG ====== */
+    canvas#bgcanvas {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
     }
 
     /* ====== HEADER ====== */
     .header {
       position: fixed; top: 0; left: 0; right: 0;
-      padding: 20px 28px; z-index: 50;
+      padding: 22px 30px; z-index: 50;
       display: flex; justify-content: space-between; align-items: center;
       pointer-events: none;
+      opacity: 0; animation: fade-in 1.4s 0.4s ease-out forwards;
     }
     .header > * { pointer-events: auto; }
-    .logo-text { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.4px; }
-    .logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); animation: pulse-dot 2s ease-in-out infinite; }
+    .logo-text { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+    .logo-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 14px var(--green), 0 0 28px rgba(20,241,149,0.4);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
     @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 14px var(--green), 0 0 28px rgba(20,241,149,0.4); }
+      50% { opacity: 0.7; transform: scale(0.85); box-shadow: 0 0 8px var(--green), 0 0 16px rgba(20,241,149,0.3); }
     }
     .status-pill {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 7px 13px; border-radius: 100px;
-      background: rgba(20, 241, 149, 0.08); border: 1px solid rgba(20, 241, 149, 0.2);
+      padding: 8px 14px; border-radius: 100px;
+      background: rgba(20, 241, 149, 0.08); border: 1px solid rgba(20, 241, 149, 0.22);
       color: var(--green); font-size: 12px; font-weight: 500;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     }
     .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
     .status-pill.idle { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); color: var(--text-dim); }
@@ -103,180 +65,295 @@
       position: relative;
       width: 100vw; height: 100vh;
       z-index: 1;
+      perspective: 1200px;
+    }
+    .galaxy-inner {
+      position: absolute; inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Orbit rings - SVG drawn dynamically */
-    .orbits-svg {
+    /* SVG layers */
+    .links, .orbits-svg, .heartbeat-svg {
       position: absolute; left: 50%; top: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      opacity: 0.4;
     }
+    .orbits-svg { opacity: 0; animation: fade-in 1.8s 0.8s ease-out forwards; }
     .orbits-svg circle {
       fill: none;
-      stroke: rgba(255,255,255,0.08);
+      stroke: rgba(255,255,255,0.06);
       stroke-width: 1;
-      stroke-dasharray: 2 6;
+      stroke-dasharray: 2 8;
+    }
+    .links { width: 100vw; height: 100vh; }
+    .links line {
+      stroke-width: 1.2;
+      filter: drop-shadow(0 0 6px currentColor);
+    }
+    .heartbeat-svg { width: 100vw; height: 100vh; }
+    .heartbeat-svg circle {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      opacity: 0;
+    }
+    @keyframes shockwave {
+      0% { r: 80; opacity: 0.7; stroke-width: 2; }
+      100% { r: 600; opacity: 0; stroke-width: 0.3; }
+    }
+    @keyframes fade-in {
+      to { opacity: 1; }
     }
 
-    /* Center orb (Pulse logo) */
-    .core {
+    /* ====== CORE ====== */
+    .core-wrap {
       position: absolute; left: 50%; top: 50%;
-      width: 140px; height: 140px;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #fff 0%, var(--accent) 35%, var(--accent-2) 100%);
-      box-shadow:
-        0 0 60px rgba(139, 92, 246, 0.8),
-        0 0 120px rgba(139, 92, 246, 0.4),
-        inset -10px -10px 30px rgba(0,0,0,0.4);
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      animation: core-pulse 4s ease-in-out infinite;
+      width: 180px; height: 180px;
+      transform: translate(-50%, -50%) scale(0);
+      animation: core-arrive 1.3s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       z-index: 10;
-      transition: transform 0.3s ease;
     }
-    .core:hover { transform: translate(-50%, -50%) scale(1.05); }
+    @keyframes core-arrive {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(-30deg); }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(0); }
+    }
+    .core {
+      position: absolute; inset: 20px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 6%, transparent 18%),
+        radial-gradient(circle at 38% 35%, #FAF8FF 0%, #B49BFF 18%, var(--accent) 45%, var(--accent-2) 100%);
+      box-shadow:
+        0 0 60px rgba(139, 92, 246, 0.85),
+        0 0 120px rgba(139, 92, 246, 0.45),
+        0 0 200px rgba(59, 130, 246, 0.25),
+        inset -12px -16px 40px rgba(0,0,0,0.45),
+        inset 8px 10px 24px rgba(255,255,255,0.15);
+      cursor: pointer;
+      animation: core-breathe 4.5s ease-in-out infinite;
+      transition: filter 0.3s ease, transform 0.3s ease;
+    }
+    .core:hover { filter: brightness(1.15) saturate(1.1); }
     .core.drop-target {
       box-shadow:
         0 0 80px rgba(20, 241, 149, 1),
-        0 0 160px rgba(20, 241, 149, 0.6);
-      animation: core-attract 0.8s ease-in-out infinite;
+        0 0 160px rgba(20, 241, 149, 0.6),
+        0 0 280px rgba(20, 241, 149, 0.3),
+        inset -12px -16px 40px rgba(0,0,0,0.45);
+      animation: core-attract 0.7s ease-in-out infinite;
     }
-    @keyframes core-pulse {
-      0%, 100% { box-shadow: 0 0 60px rgba(139, 92, 246, 0.8), 0 0 120px rgba(139, 92, 246, 0.4), inset -10px -10px 30px rgba(0,0,0,0.4); }
-      50% { box-shadow: 0 0 80px rgba(139, 92, 246, 1), 0 0 160px rgba(139, 92, 246, 0.5), inset -10px -10px 30px rgba(0,0,0,0.4); }
+    .core.thinking {
+      animation: core-thinking 1.4s ease-in-out infinite;
+    }
+    @keyframes core-breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
     }
     @keyframes core-attract {
-      0%, 100% { transform: translate(-50%, -50%) scale(1.05); }
-      50% { transform: translate(-50%, -50%) scale(1.15); }
+      0%, 100% { transform: scale(1.08); }
+      50% { transform: scale(1.2); }
+    }
+    @keyframes core-thinking {
+      0%, 100% { transform: scale(1); filter: hue-rotate(0deg) brightness(1); }
+      50% { transform: scale(1.06); filter: hue-rotate(20deg) brightness(1.2); }
     }
     .core-text {
-      font-weight: 800; font-size: 22px; letter-spacing: -1px;
-      color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 26px; letter-spacing: -1.2px;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 30px rgba(139,92,246,0.6);
+      pointer-events: none;
+    }
+    /* Rotating energy ring around the core */
+    .core-ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background:
+        conic-gradient(from 0deg,
+          transparent 0deg, rgba(139,92,246,0.4) 30deg, transparent 60deg,
+          transparent 180deg, rgba(59,130,246,0.4) 210deg, transparent 240deg);
+      animation: ring-spin 6s linear infinite;
+      filter: blur(8px);
+      pointer-events: none;
+    }
+    @keyframes ring-spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Scan line sweep over core */
+    .core-scan {
+      position: absolute; inset: 20px;
+      border-radius: 50%; overflow: hidden;
+      pointer-events: none;
+    }
+    .core-scan::before {
+      content: ''; position: absolute;
+      top: -50%; left: -50%; width: 200%; height: 4px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+      animation: scan 5s ease-in-out infinite;
+    }
+    @keyframes scan {
+      0% { top: -50%; opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { top: 150%; opacity: 0; }
     }
 
-    /* Planets (apps) */
+    /* ====== PLANETS ====== */
     .planet {
       position: absolute; left: 50%; top: 50%;
-      width: 52px; height: 52px;
-      margin-left: -26px; margin-top: -26px;
-      border-radius: 12px;
+      width: 56px; height: 56px;
+      margin-left: -28px; margin-top: -28px;
+      border-radius: 14px;
       cursor: grab;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 18px; color: #fff;
-      transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+      font-weight: 800; font-size: 20px; color: #fff;
+      transition: filter 0.3s ease, box-shadow 0.3s ease, transform 0.15s ease;
       will-change: transform;
-      overflow: hidden;
+      overflow: visible;
       z-index: 5;
+      opacity: 0;
+      animation: planet-arrive 0.9s ease-out forwards;
     }
+    @keyframes planet-arrive {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .planet::before {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: inherit;
+      background: inherit;
+      box-shadow: inset 0 -8px 16px rgba(0,0,0,0.4), inset 0 8px 16px rgba(255,255,255,0.2);
+      pointer-events: none;
+    }
+    .planet img { width: 100%; height: 100%; object-fit: contain; padding: 10px; pointer-events: none; position: relative; z-index: 1; }
+    .planet > span { position: relative; z-index: 1; }
     .planet:hover { z-index: 11; }
-    .planet img { width: 100%; height: 100%; object-fit: contain; padding: 9px; pointer-events: none; }
-    .planet.dragging { cursor: grabbing; z-index: 100; transition: none; filter: brightness(1.4); }
+    .planet.dragging { cursor: grabbing; z-index: 100; transition: none; filter: brightness(1.4) saturate(1.2); }
     .planet.connected {
-      box-shadow: 0 0 18px currentColor, inset 0 0 0 1.5px rgba(255,255,255,0.4);
-      filter: brightness(1.1);
+      box-shadow:
+        0 0 22px currentColor,
+        0 0 50px currentColor,
+        inset 0 0 0 1.5px rgba(255,255,255,0.5);
+      filter: brightness(1.1) saturate(1.1);
     }
-    .planet:not(.connected) { filter: brightness(0.55) saturate(0.7); }
-    .planet:not(.connected):hover { filter: brightness(1); transform: scale(1.15); }
+    .planet:not(.connected) { filter: brightness(0.55) saturate(0.6); opacity: 0.75; }
+    .planet:not(.connected):hover { filter: brightness(1.1) saturate(1); transform: scale(1.18); opacity: 1; }
+    .planet.just-connected {
+      animation: planet-celebrate 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes planet-celebrate {
+      0% { transform: scale(1); filter: brightness(1.5) saturate(1.5); }
+      30% { transform: scale(1.6); filter: brightness(2) saturate(1.5); box-shadow: 0 0 80px currentColor, 0 0 160px currentColor; }
+      100% { transform: scale(1); filter: brightness(1.1); }
+    }
 
-    .planet-label {
-      position: absolute;
-      top: 100%; left: 50%; transform: translateX(-50%);
-      margin-top: 8px;
-      font-size: 11px; font-weight: 500; color: var(--text-dim);
+    /* Hover tooltip card */
+    .planet-tip {
+      position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%);
+      background: rgba(15, 15, 18, 0.92);
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      padding: 10px 14px; border-radius: 10px;
+      font-size: 12px; color: #fff;
       white-space: nowrap;
       pointer-events: none;
-      opacity: 0; transition: opacity 0.2s ease;
+      opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      z-index: 50;
     }
-    .planet:hover .planet-label { opacity: 1; }
-    .planet.connected .planet-label { color: var(--green); opacity: 0.9; }
-
-    /* Connection lines (SVG) */
-    .links { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
-    .link {
-      stroke: var(--green); stroke-width: 1;
-      stroke-dasharray: 3 6;
-      opacity: 0.5;
-      animation: link-flow 3s linear infinite;
-    }
-    @keyframes link-flow {
-      to { stroke-dashoffset: -36; }
-    }
+    .planet-tip strong { font-weight: 700; }
+    .planet-tip .tip-meta { color: var(--text-dim); font-size: 11px; margin-top: 2px; font-weight: 400; }
+    .planet:hover .planet-tip { opacity: 1; transform: translateX(-50%) translateY(-4px); }
 
     /* ====== BOTTOM PANEL ====== */
     .panel {
-      position: fixed; bottom: 20px; left: 50%;
+      position: fixed; bottom: 22px; left: 50%;
       transform: translateX(-50%);
       max-width: 720px; width: calc(100% - 32px);
-      background: rgba(15, 15, 15, 0.85);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px 20px;
+      background: rgba(12, 12, 14, 0.78);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 14px 18px;
       z-index: 40;
-      display: flex; align-items: center; gap: 14px;
+      display: flex; align-items: center; gap: 12px;
+      opacity: 0; animation: drop-up 0.7s 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     }
-    .panel-hint { font-size: 13px; color: var(--text-dim); flex: 1; }
+    @keyframes drop-up {
+      0% { opacity: 0; transform: translateX(-50%) translateY(40px); }
+      100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .panel-hint { font-size: 13px; color: var(--text-dim); flex: 1; line-height: 1.4; }
     .panel-hint b { color: var(--text); font-weight: 600; }
     .panel input {
-      flex: 1; background: var(--bg-elev); border: 1px solid var(--border);
-      color: var(--text); padding: 9px 12px; border-radius: 8px;
-      font-size: 13px; font-family: inherit; min-width: 140px;
+      flex: 1; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text); padding: 10px 14px; border-radius: 10px;
+      font-size: 13px; font-family: inherit; min-width: 160px;
+      transition: border-color 0.2s ease, background 0.2s ease;
     }
-    .panel input:focus { outline: none; border-color: var(--accent); }
+    .panel input:focus { outline: none; border-color: var(--accent); background: rgba(139, 92, 246, 0.08); }
     .panel button {
-      background: #fff; color: #000; border: none;
-      padding: 9px 16px; border-radius: 8px;
-      font-weight: 600; font-size: 13px; cursor: pointer;
+      background: linear-gradient(135deg, #fff, #E0E0E0);
+      color: #000; border: none;
+      padding: 10px 18px; border-radius: 10px;
+      font-weight: 700; font-size: 13px; cursor: pointer;
       font-family: inherit;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 14px rgba(255,255,255,0.1);
     }
-    .panel button:hover { background: #e5e5e5; }
+    .panel button:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,0.2); }
 
-    /* Welcome banner */
+    /* ====== WELCOME BANNER ====== */
     .welcome {
-      position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
-      background: rgba(20, 241, 149, 0.1);
+      position: fixed; top: 76px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 241, 149, 0.08);
       border: 1px solid rgba(20, 241, 149, 0.3);
-      backdrop-filter: blur(10px);
-      padding: 10px 18px; border-radius: 100px;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      padding: 12px 22px; border-radius: 100px;
       color: var(--green); font-size: 13px; font-weight: 500;
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 10px;
       z-index: 40;
-      animation: drop-in 0.5s ease-out;
+      animation: welcome-drop 0.7s 1s ease-out backwards;
+      box-shadow: 0 10px 40px rgba(20, 241, 149, 0.2);
     }
-    @keyframes drop-in {
-      from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @keyframes welcome-drop {
+      0% { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+      100% { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    /* Connecting toast */
+    /* ====== TOAST ====== */
     .toast {
       position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
-      background: rgba(139, 92, 246, 0.15);
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.15));
       border: 1px solid rgba(139, 92, 246, 0.4);
-      padding: 14px 22px; border-radius: 12px;
+      padding: 14px 24px; border-radius: 14px;
       color: #fff; font-weight: 500; font-size: 14px;
       z-index: 60;
-      backdrop-filter: blur(10px);
-      animation: toast-in 0.3s ease-out;
+      backdrop-filter: blur(20px);
+      animation: toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 10px 40px rgba(139,92,246,0.3);
     }
     @keyframes toast-in {
-      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.95); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
     }
 
     @media (max-width: 600px) {
-      .core { width: 100px; height: 100px; }
-      .core-text { font-size: 17px; }
+      .core-wrap { width: 130px; height: 130px; }
+      .core-text { font-size: 19px; }
       .panel { padding: 12px 14px; flex-direction: column; align-items: stretch; }
+      .panel-hint { display: none; }
     }
   </style>
 </head>
 <body>
-  <div class="stars"></div>
-  <div class="stars2"></div>
-  <div class="nebula"></div>
+  <canvas id="bgcanvas"></canvas>
 
   <header class="header">
     <div class="logo-text">
@@ -295,16 +372,22 @@
   </div>
 
   <div class="galaxy" id="galaxy">
-    <svg class="links" id="links"></svg>
-    <svg class="orbits-svg" id="orbitsSvg" width="800" height="800" viewBox="-400 -400 800 800"></svg>
-    <div class="core" id="core">
-      <div class="core-text">pulse</div>
+    <div class="galaxy-inner" id="galaxyInner">
+      <svg class="orbits-svg" id="orbitsSvg" width="900" height="900" viewBox="-450 -450 900 900"></svg>
+      <svg class="heartbeat-svg" id="heartbeatSvg"></svg>
+      <svg class="links" id="links"></svg>
+      <div class="core-wrap" id="coreWrap">
+        <div class="core-ring"></div>
+        <div class="core" id="core"></div>
+        <div class="core-scan"></div>
+        <div class="core-text">pulse</div>
+      </div>
     </div>
   </div>
 
   <div class="panel">
     <span class="panel-hint">
-      <b>Click</b> a planet to connect · <b>Drag</b> any planet to the orb · <b>Custom slug:</b>
+      <b>Click</b> a planet to connect · <b>Drag</b> any planet into the orb · or type a custom slug:
     </span>
     <input id="customApp" placeholder="asana, jira, fireflies_ai…" />
     <button id="customBtn">Add</button>
@@ -312,25 +395,106 @@
 
   <script>
     const APPS = [
-      { slug: 'gmail',            name: 'Gmail',          si: 'gmail',           color: '#EA4335' },
-      { slug: 'google_calendar',  name: 'Calendar',       si: 'googlecalendar',  color: '#4285F4' },
-      { slug: 'google_drive',     name: 'Drive',          si: 'googledrive',     color: '#4285F4' },
-      { slug: 'slack',            name: 'Slack',          si: 'slack',           color: '#4A154B' },
-      { slug: 'notion',           name: 'Notion',         si: 'notion',          color: '#000000' },
-      { slug: 'linear',           name: 'Linear',         si: 'linear',          color: '#5E6AD2' },
-      { slug: 'hubspot',          name: 'HubSpot',        si: 'hubspot',         color: '#FF7A59' },
-      { slug: 'github',           name: 'GitHub',         si: 'github',          color: '#181717' },
-      { slug: 'fathom',           name: 'Fathom',         si: null,              color: '#7B68EE' },
-      { slug: 'stripe',           name: 'Stripe',         si: 'stripe',          color: '#008CDD' },
-      { slug: 'airtable',         name: 'Airtable',       si: 'airtable',        color: '#18BFFF' },
-      { slug: 'zoom',             name: 'Zoom',           si: 'zoom',            color: '#0B5CFF' },
-      { slug: 'fireflies_ai',     name: 'Fireflies',      si: null,              color: '#FFD43B' },
-      { slug: 'attio',            name: 'Attio',          si: null,              color: '#3B82F6' },
-      { slug: 'loom',             name: 'Loom',           si: null,              color: '#625DF5' },
-      { slug: 'cal_com',          name: 'Cal.com',        si: null,              color: '#FFFFFF' },
+      { slug: 'gmail',            name: 'Gmail',          si: 'gmail',           color: '#EA4335', use: 'Read, draft, send email' },
+      { slug: 'google_calendar',  name: 'Calendar',       si: 'googlecalendar',  color: '#4285F4', use: 'See & book meetings' },
+      { slug: 'google_drive',     name: 'Drive',          si: 'googledrive',     color: '#4285F4', use: 'Search docs, save reports' },
+      { slug: 'slack',            name: 'Slack',          si: 'slack',           color: '#4A154B', use: 'Post messages, search' },
+      { slug: 'notion',           name: 'Notion',         si: 'notion',          color: '#000000', use: 'Read & update pages' },
+      { slug: 'linear',           name: 'Linear',         si: 'linear',          color: '#5E6AD2', use: 'Create & track issues' },
+      { slug: 'hubspot',          name: 'HubSpot',        si: 'hubspot',         color: '#FF7A59', use: 'Manage CRM contacts' },
+      { slug: 'github',           name: 'GitHub',         si: 'github',          color: '#181717', use: 'Read repos, file PRs' },
+      { slug: 'fathom',           name: 'Fathom',         si: null,              color: '#7B68EE', use: 'Pull meeting recordings' },
+      { slug: 'stripe',           name: 'Stripe',         si: 'stripe',          color: '#008CDD', use: 'Payments & invoices' },
+      { slug: 'airtable',         name: 'Airtable',       si: 'airtable',        color: '#18BFFF', use: 'Query & update bases' },
+      { slug: 'zoom',             name: 'Zoom',           si: 'zoom',            color: '#0B5CFF', use: 'Schedule meetings' },
+      { slug: 'fireflies_ai',     name: 'Fireflies',      si: null,              color: '#FFD43B', use: 'Meeting transcripts' },
+      { slug: 'attio',            name: 'Attio',          si: null,              color: '#3B82F6', use: 'CRM, people, deals' },
+      { slug: 'loom',             name: 'Loom',           si: null,              color: '#625DF5', use: 'Search videos' },
+      { slug: 'cal_com',          name: 'Cal.com',        si: null,              color: '#1A1A1A', use: 'Open-source scheduling' },
     ];
 
-    // --- identity ---
+    /* ============================ */
+    /* 1. DEEP SPACE BACKGROUND     */
+    /* ============================ */
+    const bgCanvas = document.getElementById('bgcanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resizeBg() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      bgCanvas.width = innerWidth * dpr;
+      bgCanvas.height = innerHeight * dpr;
+      bgCanvas.style.width = innerWidth + 'px';
+      bgCanvas.style.height = innerHeight + 'px';
+      bgCtx.scale(dpr, dpr);
+    }
+    resizeBg();
+    window.addEventListener('resize', () => { resizeBg(); });
+
+    // Star layers - parallax
+    const starLayers = [
+      { count: 90, speed: 0.04, size: [0.4, 1.2], color: 'rgba(255,255,255,0.6)' },
+      { count: 60, speed: 0.10, size: [0.6, 1.6], color: 'rgba(255,255,255,0.9)' },
+      { count: 25, speed: 0.20, size: [1.0, 2.4], color: 'rgba(180,180,255,1)' },
+    ];
+    const stars = [];
+    starLayers.forEach((layer, li) => {
+      for (let i = 0; i < layer.count; i++) {
+        stars.push({
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          r: layer.size[0] + Math.random() * (layer.size[1] - layer.size[0]),
+          speed: layer.speed,
+          color: layer.color,
+          twinkle: Math.random() * Math.PI * 2,
+          layer: li,
+        });
+      }
+    });
+
+    // Mouse parallax
+    const mouse = { x: innerWidth / 2, y: innerHeight / 2, tx: 0, ty: 0 };
+    document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+    function drawBg(now) {
+      bgCtx.clearRect(0, 0, innerWidth, innerHeight);
+
+      // Nebula glow center
+      const ng = bgCtx.createRadialGradient(
+        innerWidth / 2 + mouse.tx * 30, innerHeight / 2 + mouse.ty * 30, 0,
+        innerWidth / 2, innerHeight / 2, Math.max(innerWidth, innerHeight) * 0.6,
+      );
+      ng.addColorStop(0, 'rgba(139, 92, 246, 0.24)');
+      ng.addColorStop(0.3, 'rgba(59, 130, 246, 0.10)');
+      ng.addColorStop(0.6, 'rgba(20, 6, 60, 0.04)');
+      ng.addColorStop(1, 'transparent');
+      bgCtx.fillStyle = ng;
+      bgCtx.fillRect(0, 0, innerWidth, innerHeight);
+
+      // Stars
+      const t = now * 0.001;
+      stars.forEach(s => {
+        s.x -= s.speed * 0.5;
+        if (s.x < 0) s.x = innerWidth;
+        const tw = 0.6 + 0.4 * Math.sin(t * 2 + s.twinkle);
+        const px = s.x + mouse.tx * 8 * (s.layer + 1);
+        const py = s.y + mouse.ty * 8 * (s.layer + 1);
+        bgCtx.fillStyle = s.color.replace(/,([\d.]+)\)$/, (m, a) => `,${a * tw})`);
+        bgCtx.beginPath();
+        bgCtx.arc(px, py, s.r, 0, Math.PI * 2);
+        bgCtx.fill();
+        if (s.layer === 2) {
+          bgCtx.beginPath();
+          bgCtx.arc(px, py, s.r * 3, 0, Math.PI * 2);
+          bgCtx.fillStyle = s.color.replace(/,[\d.]+\)$/, `,${0.15 * tw})`);
+          bgCtx.fill();
+        }
+      });
+    }
+
+    /* ============================ */
+    /* 2. STATE + IDENTITY          */
+    /* ============================ */
     const params = new URLSearchParams(window.location.search);
     if (params.get("installed")) document.getElementById("welcome").style.display = "flex";
     const team = params.get("team");
@@ -352,64 +516,66 @@
       document.getElementById("statusText").textContent = "Slack connected";
     }
 
-    // --- galaxy state ---
+    /* ============================ */
+    /* 3. GALAXY                    */
+    /* ============================ */
     const galaxy = document.getElementById('galaxy');
+    const galaxyInner = document.getElementById('galaxyInner');
     const core = document.getElementById('core');
+    const coreWrap = document.getElementById('coreWrap');
     const linksSvg = document.getElementById('links');
     const orbitsSvg = document.getElementById('orbitsSvg');
+    const heartbeatSvg = document.getElementById('heartbeatSvg');
 
-    let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-    function recenter() { cx = window.innerWidth / 2; cy = window.innerHeight / 2; }
+    let cx = innerWidth / 2, cy = innerHeight / 2;
+    function recenter() { cx = innerWidth / 2; cy = innerHeight / 2; }
     window.addEventListener('resize', () => { recenter(); layoutOrbits(); });
 
-    // Planet state
     const planets = APPS.map((app, i) => ({
-      app,
-      el: null,
+      app, el: null,
       angle: (i / APPS.length) * Math.PI * 2,
-      radius: 0,
-      speed: 0,
-      orbitIndex: 0,
-      connected: false,
-      dragging: false,
+      radius: 0, speed: 0, orbitIndex: 0,
+      connected: false, dragging: false,
       dragX: 0, dragY: 0,
+      arrivalDelay: 0.6 + (i * 0.07),
     }));
 
     function layoutOrbits() {
       const connected = planets.filter(p => p.connected);
       const available = planets.filter(p => !p.connected);
-
-      // Connected planets: inner orbit
-      const innerR = Math.min(180, Math.min(window.innerWidth, window.innerHeight) * 0.20);
-      // Available planets: split into 2-3 outer rings
+      const baseSize = Math.min(innerWidth, innerHeight);
+      const innerR = Math.min(200, baseSize * 0.22);
       const outerRings = available.length > 8 ? 3 : 2;
       const ringRadii = [];
       for (let i = 0; i < outerRings; i++) {
-        ringRadii.push(Math.min(window.innerWidth, window.innerHeight) * (0.32 + i * 0.12));
+        ringRadii.push(baseSize * (0.34 + i * 0.10));
       }
 
       connected.forEach((p, i) => {
         p.radius = innerR;
-        p.angle = (i / Math.max(connected.length, 1)) * Math.PI * 2;
-        p.speed = 0.0008; // slow & graceful for connected
+        p.targetAngle = (i / Math.max(connected.length, 1)) * Math.PI * 2;
+        if (typeof p.angle !== 'number' || isNaN(p.angle)) p.angle = p.targetAngle;
+        p.speed = 0.0009;
         p.orbitIndex = 0;
       });
       available.forEach((p, i) => {
         const ringIdx = i % outerRings;
         p.radius = ringRadii[ringIdx];
         const inRing = available.filter((_, j) => j % outerRings === ringIdx).length;
-        p.angle = ((i / outerRings) / inRing) * Math.PI * 2 + ringIdx * 0.4;
-        p.speed = 0.0003 + ringIdx * 0.0002;
+        p.targetAngle = ((i / outerRings) / inRing) * Math.PI * 2 + ringIdx * 0.4;
+        if (typeof p.angle !== 'number' || isNaN(p.angle)) p.angle = p.targetAngle;
+        p.speed = 0.00025 + ringIdx * 0.00018;
         p.orbitIndex = ringIdx + 1;
       });
 
-      // Redraw orbit rings (SVG)
+      // Redraw orbit rings
       orbitsSvg.innerHTML = '';
-      const rings = [innerR, ...ringRadii];
-      rings.forEach(r => {
+      const allRings = [innerR, ...ringRadii];
+      allRings.forEach((r, i) => {
         const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         c.setAttribute('cx', 0); c.setAttribute('cy', 0);
         c.setAttribute('r', r);
+        if (i === 0) c.setAttribute('stroke', 'rgba(139,92,246,0.18)');
         orbitsSvg.appendChild(c);
       });
     }
@@ -417,27 +583,26 @@
     function buildPlanetEl(p) {
       const el = document.createElement('div');
       el.className = 'planet';
-      el.style.background = p.app.color;
+      el.style.background = `linear-gradient(135deg, ${p.app.color}, ${shade(p.app.color, -25)})`;
       el.style.color = p.app.color;
+      el.style.animationDelay = `${p.arrivalDelay}s`;
       if (p.app.si) {
         const img = document.createElement('img');
         img.src = `https://cdn.simpleicons.org/${p.app.si}/white`;
-        img.onerror = () => { el.removeChild(img); el.textContent = p.app.name[0]; };
+        img.onerror = () => { el.removeChild(img); const s = document.createElement('span'); s.textContent = p.app.name[0]; el.appendChild(s); };
         el.appendChild(img);
       } else {
-        el.textContent = p.app.name[0];
+        const s = document.createElement('span'); s.textContent = p.app.name[0]; el.appendChild(s);
       }
-      const label = document.createElement('div');
-      label.className = 'planet-label';
-      label.textContent = p.app.name;
-      el.appendChild(label);
+      const tip = document.createElement('div');
+      tip.className = 'planet-tip';
+      tip.innerHTML = `<strong>${p.app.name}</strong><div class="tip-meta">${p.app.use}</div>`;
+      el.appendChild(tip);
 
-      // Drag handlers
-      el.addEventListener('mousedown', e => startDrag(p, e));
-      el.addEventListener('touchstart', e => startDrag(p, e.touches[0]), {passive:true});
-      // Click to connect (only if not connected)
+      el.addEventListener('mousedown', e => { e.preventDefault(); startDrag(p, e); });
+      el.addEventListener('touchstart', e => { startDrag(p, e.touches[0]); }, {passive:true});
       el.addEventListener('click', e => {
-        if (Math.abs(p.dragDeltaX || 0) < 4 && Math.abs(p.dragDeltaY || 0) < 4) {
+        if ((p.dragDeltaTotal || 0) < 6) {
           if (!p.connected) connect(p.app.slug);
         }
       });
@@ -445,21 +610,29 @@
       return el;
     }
 
+    function shade(hex, percent) {
+      const num = parseInt(hex.replace('#',''), 16);
+      const amt = Math.round(2.55 * percent);
+      const r = Math.max(0, Math.min(255, (num >> 16) + amt));
+      const g = Math.max(0, Math.min(255, (num >> 8 & 0xff) + amt));
+      const b = Math.max(0, Math.min(255, (num & 0xff) + amt));
+      return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+    }
+
     function startDrag(p, evt) {
       p.dragging = true;
-      p.dragDeltaX = 0; p.dragDeltaY = 0;
-      p.dragX = evt.clientX;
-      p.dragY = evt.clientY;
+      p.dragDeltaTotal = 0;
+      p.dragX = evt.clientX; p.dragY = evt.clientY;
       p.el.classList.add('dragging');
+      let prevX = evt.clientX, prevY = evt.clientY;
       const move = (e) => {
         const ev = e.touches ? e.touches[0] : e;
-        p.dragX = ev.clientX;
-        p.dragY = ev.clientY;
-        p.dragDeltaX += 1; p.dragDeltaY += 1;
-        // Highlight core if close enough
+        p.dragX = ev.clientX; p.dragY = ev.clientY;
+        p.dragDeltaTotal += Math.abs(ev.clientX - prevX) + Math.abs(ev.clientY - prevY);
+        prevX = ev.clientX; prevY = ev.clientY;
         const dx = ev.clientX - cx, dy = ev.clientY - cy;
         const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 120) core.classList.add('drop-target');
+        if (dist < 130) core.classList.add('drop-target');
         else core.classList.remove('drop-target');
       };
       const up = (e) => {
@@ -469,9 +642,7 @@
         const ev = e.changedTouches ? e.changedTouches[0] : e;
         const dx = ev.clientX - cx, dy = ev.clientY - cy;
         const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 120 && !p.connected) {
-          connect(p.app.slug);
-        }
+        if (dist < 130 && !p.connected) connect(p.app.slug);
         document.removeEventListener('mousemove', move);
         document.removeEventListener('mouseup', up);
         document.removeEventListener('touchmove', move);
@@ -483,41 +654,108 @@
       document.addEventListener('touchend', up);
     }
 
-    function init() {
-      recenter();
-      planets.forEach(p => { p.el = buildPlanetEl(p); });
-      layoutOrbits();
-      requestAnimationFrame(loop);
+    /* ============================ */
+    /* 4. PARTICLE STREAM (DATA FLOW) */
+    /* ============================ */
+    const particles = []; // each: {fromPlanet, t, speed}
+    function spawnParticles() {
+      planets.filter(p => p.connected && Math.random() < 0.04).forEach(p => {
+        particles.push({ p, t: 0, speed: 0.008 + Math.random() * 0.008 });
+      });
     }
 
-    function loop() {
+    /* ============================ */
+    /* 5. HEARTBEAT SHOCKWAVES      */
+    /* ============================ */
+    let lastShockwave = 0;
+    function spawnShockwave(now) {
+      if (now - lastShockwave > 3200) {
+        lastShockwave = now;
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+        c.setAttribute('r', 80);
+        c.setAttribute('class', 'shockwave');
+        c.style.animation = 'shockwave 2.4s ease-out forwards';
+        heartbeatSvg.appendChild(c);
+        setTimeout(() => c.remove(), 2500);
+      }
+    }
+
+    /* ============================ */
+    /* 6. MAIN ANIMATION LOOP       */
+    /* ============================ */
+    let lastNow = performance.now();
+    function loop(now) {
+      const dt = Math.min(now - lastNow, 50);
+      lastNow = now;
+
+      // Mouse parallax (smoothed)
+      mouse.tx += ((mouse.x / innerWidth - 0.5) * 2 - mouse.tx) * 0.04;
+      mouse.ty += ((mouse.y / innerHeight - 0.5) * 2 - mouse.ty) * 0.04;
+      galaxyInner.style.transform =
+        `rotateY(${mouse.tx * 3}deg) rotateX(${-mouse.ty * 2}deg) translateZ(0)`;
+
+      drawBg(now);
+
+      // Update orbit angles smoothly toward targets
       planets.forEach(p => {
-        if (!p.dragging) p.angle += p.speed;
+        if (!p.dragging) {
+          p.angle += p.speed * dt;
+        }
+      });
+
+      // Position planets
+      planets.forEach(p => {
         let x, y;
-        if (p.dragging) {
-          x = p.dragX; y = p.dragY;
-        } else {
+        if (p.dragging) { x = p.dragX; y = p.dragY; }
+        else {
           x = cx + Math.cos(p.angle) * p.radius;
           y = cy + Math.sin(p.angle) * p.radius;
         }
         p.x = x; p.y = y;
         p.el.style.transform = `translate(${x - cx}px, ${y - cy}px)`;
       });
-      // Redraw connection lines for connected planets
-      const w = window.innerWidth, h = window.innerHeight;
-      linksSvg.setAttribute('width', w);
-      linksSvg.setAttribute('height', h);
+
+      // Draw connection lines
+      const w = innerWidth, h = innerHeight;
+      linksSvg.setAttribute('width', w); linksSvg.setAttribute('height', h);
       linksSvg.innerHTML = '';
       planets.filter(p => p.connected).forEach(p => {
         const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         ln.setAttribute('x1', cx); ln.setAttribute('y1', cy);
         ln.setAttribute('x2', p.x); ln.setAttribute('y2', p.y);
-        ln.setAttribute('class', 'link');
+        ln.setAttribute('stroke', p.app.color);
+        ln.setAttribute('opacity', 0.45);
+        ln.setAttribute('stroke-dasharray', '4 8');
+        ln.style.color = p.app.color;
         linksSvg.appendChild(ln);
       });
+
+      // Spawn + draw particles flowing along connection lines
+      spawnParticles();
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.t += pt.speed;
+        if (pt.t >= 1) { particles.splice(i, 1); continue; }
+        const px = pt.p.x + (cx - pt.p.x) * pt.t;
+        const py = pt.p.y + (cy - pt.p.y) * pt.t;
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', px); c.setAttribute('cy', py);
+        c.setAttribute('r', 2);
+        c.setAttribute('fill', pt.p.app.color);
+        c.setAttribute('opacity', 1 - pt.t * 0.7);
+        c.style.filter = `drop-shadow(0 0 6px ${pt.p.app.color})`;
+        linksSvg.appendChild(c);
+      }
+
+      spawnShockwave(now);
+
       requestAnimationFrame(loop);
     }
 
+    /* ============================ */
+    /* 7. API CALLS                 */
+    /* ============================ */
     function showToast(msg, duration = 3000) {
       const old = document.querySelector('.toast');
       if (old) old.remove();
@@ -535,11 +773,18 @@
         const connectedSlugs = new Set(accounts.map(a => a.app?.name_slug).filter(Boolean));
         let changed = false;
         planets.forEach(p => {
-          const wasConnected = p.connected;
+          const was = p.connected;
           p.connected = connectedSlugs.has(p.app.slug);
-          if (wasConnected !== p.connected) {
+          if (was !== p.connected) {
             changed = true;
             p.el.classList.toggle('connected', p.connected);
+            if (p.connected) {
+              p.el.classList.add('just-connected');
+              setTimeout(() => p.el.classList.remove('just-connected'), 1300);
+              core.classList.add('thinking');
+              setTimeout(() => core.classList.remove('thinking'), 1500);
+              showToast(`✨ ${p.app.name} connected`, 2500);
+            }
           }
         });
         if (changed) layoutOrbits();
@@ -557,10 +802,10 @@
         const { connectLinkUrl, error } = await r.json();
         if (error) return showToast("Error: " + error);
         if (!connectLinkUrl) return showToast("No connect URL returned.");
-        window.open(connectLinkUrl, "_blank", "width=600,height=720");
-        setTimeout(refreshAccounts, 4000);
-        setTimeout(refreshAccounts, 10000);
-        setTimeout(refreshAccounts, 20000);
+        window.open(connectLinkUrl, "_blank", "width=620,height=740");
+        setTimeout(refreshAccounts, 3500);
+        setTimeout(refreshAccounts, 8000);
+        setTimeout(refreshAccounts, 16000);
       } catch (e) { showToast("Network error: " + e.message); }
     }
 
@@ -571,7 +816,22 @@
     document.getElementById("customApp").addEventListener("keydown", e => {
       if (e.key === "Enter") document.getElementById("customBtn").click();
     });
+    core.addEventListener('click', () => {
+      // Easter egg: clicking the core sends a shockwave
+      lastShockwave = 0;
+      core.classList.add('thinking');
+      setTimeout(() => core.classList.remove('thinking'), 1400);
+    });
 
+    /* ============================ */
+    /* 8. BOOT                       */
+    /* ============================ */
+    function init() {
+      recenter();
+      planets.forEach(p => { p.el = buildPlanetEl(p); });
+      layoutOrbits();
+      requestAnimationFrame(loop);
+    }
     init();
     refreshAccounts();
     setInterval(refreshAccounts, 12000);
