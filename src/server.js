@@ -15,7 +15,7 @@ import {
   listRoutines,
 } from "./db.js";
 import { chat } from "./claude.js";
-import { createConnectToken, listAccountsForUser, listAccountsCached, invalidateAccountCache } from "./pipedream.js";
+import { createConnectToken, listAccountsForUser, listAccountsCached, invalidateAccountCache, deleteAccountsForAppSlug } from "./pipedream.js";
 import { startRunner, registerChat, registerMetricsHook } from "./routines.js";
 
 // ----- Global error handlers — keep the process alive on transient failures -----
@@ -438,6 +438,22 @@ expressApp.post("/api/pipedream/invalidate-cache", (req, res) => {
   const externalUserId = req.body?.externalUserId;
   invalidateAccountCache(externalUserId);
   res.json({ ok: true });
+});
+
+// Disconnect every Pipedream account for the given app slug (e.g. "gmail")
+expressApp.post("/api/pipedream/disconnect", async (req, res) => {
+  try {
+    const externalUserId = req.body?.externalUserId;
+    const appSlug = req.body?.appSlug;
+    if (!externalUserId || !appSlug) {
+      return res.status(400).json({ ok: false, error: "externalUserId and appSlug required" });
+    }
+    const deleted = await deleteAccountsForAppSlug(externalUserId, appSlug);
+    res.json({ ok: true, deleted });
+  } catch (e) {
+    console.error("[pulse] disconnect error", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ----- Boot -----

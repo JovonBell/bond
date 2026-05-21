@@ -200,6 +200,38 @@
       100% { top: 150%; opacity: 0; }
     }
 
+    /* ====== TRASH ZONE (drag-to-disconnect) ====== */
+    .trash-zone {
+      position: fixed;
+      bottom: 36px; right: 36px;
+      width: 86px; height: 86px;
+      border-radius: 22px;
+      background: rgba(255, 70, 70, 0.06);
+      border: 1.5px dashed rgba(255, 90, 90, 0.28);
+      color: #ff6b6b;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px;
+      opacity: 0; transform: translateY(20px) scale(0.85);
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, border-color 0.2s, box-shadow 0.2s;
+      z-index: 60;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    }
+    .trash-zone svg { width: 28px; height: 28px; opacity: 0.9; }
+    .trash-zone .trash-label {
+      font-size: 9px; letter-spacing: 0.08em;
+      text-transform: uppercase; font-weight: 600;
+      opacity: 0.7; white-space: nowrap;
+    }
+    .trash-zone.active { opacity: 1; transform: translateY(0) scale(1); }
+    .trash-zone.hover {
+      background: rgba(255, 80, 80, 0.2);
+      border-color: rgba(255, 110, 110, 0.75);
+      transform: translateY(0) scale(1.14);
+      box-shadow: 0 0 36px rgba(255, 80, 80, 0.4);
+    }
+
     /* ====== PLANETS ====== */
     .planet {
       position: absolute; left: 50%; top: 50%;
@@ -392,10 +424,21 @@
 
   <div class="panel">
     <span class="panel-hint">
-      <b>Click</b> a planet to connect · <b>Drag</b> any planet into the orb · or type a custom slug:
+      <b>Click</b> a planet to connect · <b>Drag</b> to the orb to add · <b>Drag</b> to the trash to remove · or type a custom slug:
     </span>
     <input id="customApp" placeholder="asana, jira, fireflies_ai…" />
     <button id="customBtn">Add</button>
+  </div>
+
+  <div id="trashZone" class="trash-zone" aria-label="Drop to disconnect">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+      <line x1="10" y1="11" x2="10" y2="17"></line>
+      <line x1="14" y1="11" x2="14" y2="17"></line>
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+    </svg>
+    <div class="trash-label">Drop to remove</div>
   </div>
 
   <script>
@@ -663,11 +706,23 @@
       return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
     }
 
+    const trashZone = document.getElementById('trashZone');
+    const TRASH_RADIUS = 70;
+
+    function trashDistance(ex, ey) {
+      const r = trashZone.getBoundingClientRect();
+      const tcx = r.left + r.width / 2;
+      const tcy = r.top + r.height / 2;
+      const dx = ex - tcx, dy = ey - tcy;
+      return Math.sqrt(dx*dx + dy*dy);
+    }
+
     function startDrag(p, evt) {
       p.dragging = true;
       p.dragDeltaTotal = 0;
       p.dragX = evt.clientX; p.dragY = evt.clientY;
       p.el.classList.add('dragging');
+      if (p.connected) trashZone.classList.add('active');
       let prevX = evt.clientX, prevY = evt.clientY;
       const move = (e) => {
         const ev = e.touches ? e.touches[0] : e;
@@ -676,17 +731,26 @@
         prevX = ev.clientX; prevY = ev.clientY;
         const dx = ev.clientX - cx, dy = ev.clientY - cy;
         const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 130) core.classList.add('drop-target');
+        if (dist < 130 && !p.connected) core.classList.add('drop-target');
         else core.classList.remove('drop-target');
+        if (p.connected) {
+          if (trashDistance(ev.clientX, ev.clientY) < TRASH_RADIUS) trashZone.classList.add('hover');
+          else trashZone.classList.remove('hover');
+        }
       };
       const up = (e) => {
         p.dragging = false;
         p.el.classList.remove('dragging');
         core.classList.remove('drop-target');
+        trashZone.classList.remove('active', 'hover');
         const ev = e.changedTouches ? e.changedTouches[0] : e;
         const dx = ev.clientX - cx, dy = ev.clientY - cy;
         const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 130 && !p.connected) connect(p.app.slug);
+        if (p.connected && trashDistance(ev.clientX, ev.clientY) < TRASH_RADIUS) {
+          disconnect(p.app.slug);
+        } else if (dist < 130 && !p.connected) {
+          connect(p.app.slug);
+        }
         document.removeEventListener('mousemove', move);
         document.removeEventListener('mouseup', up);
         document.removeEventListener('touchmove', move);
@@ -857,6 +921,30 @@
         setTimeout(refreshAccounts, 8000);
         setTimeout(refreshAccounts, 16000);
       } catch (e) { showToast("Network error: " + e.message); }
+    }
+
+    async function disconnect(appSlug) {
+      const p = planets.find(pl => pl.app.slug === appSlug);
+      const label = p?.app.name || appSlug;
+      try {
+        showToast(`Disconnecting ${label}…`, 1500);
+        const r = await fetch("/api/pipedream/disconnect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ externalUserId, appSlug }),
+        });
+        const { ok, error } = await r.json();
+        if (!ok) return showToast("Disconnect failed: " + (error || "unknown"));
+        showToast(`✕  ${label} disconnected`, 2500);
+        if (p) {
+          p.connected = false;
+          p.el.classList.remove('connected');
+          layoutOrbits();
+        }
+        refreshAccounts();
+      } catch (e) {
+        showToast("Network error: " + e.message);
+      }
     }
 
     document.getElementById("customBtn").addEventListener("click", () => {

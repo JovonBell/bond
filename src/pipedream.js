@@ -48,6 +48,16 @@ export function invalidateAccountCache(externalUserId) {
   else _accountCache.clear();
 }
 
+export async function deleteAccountsForAppSlug(externalUserId, appSlug) {
+  const accounts = await listAccountsForUser(externalUserId);
+  const matching = accounts.filter((a) => a.app?.name_slug === appSlug);
+  for (const acc of matching) {
+    await pd.deleteAccount(acc.id);
+  }
+  invalidateAccountCache(externalUserId);
+  return matching.length;
+}
+
 // Cache the access token too (Pipedream tokens are valid ~4 hours)
 let _tokenCache = null;
 const TOKEN_TTL = 30 * 60_000; // re-fetch every 30 min, well before 4hr expiry
