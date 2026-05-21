@@ -14,6 +14,7 @@ import {
 } from "./db.js";
 import { chat } from "./claude.js";
 import { createConnectToken, listAccountsForUser } from "./pipedream.js";
+import { startRunner, registerChat } from "./routines.js";
 
 const { App, ExpressReceiver } = bolt;
 
@@ -284,6 +285,8 @@ expressApp.get("/healthz", (_req, res) => res.json({ ok: true }));
 const PORT = process.env.PORT || 3000;
 (async () => {
   await initSchema();
+  registerChat(chat);
+  startRunner();
   await app.start(PORT);
   console.log(`[pulse] running on :${PORT}`);
 })();
