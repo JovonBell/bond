@@ -81,16 +81,19 @@ export async function chat({ history, newMessage, externalUserId }) {
 async function buildPipedreamMcpConfig(externalUserId) {
   if (!externalUserId) return null;
   try {
+    console.log(`[claude] looking up Pipedream accounts for ${externalUserId}`);
     const accounts = await listAccountsForUser(externalUserId);
+    console.log(`[claude] found ${accounts.length} accounts`);
     if (!accounts.length) return null;
 
-    // Group by unique app slug
     const appSlugs = [...new Set(
       accounts.map((a) => a.app?.name_slug).filter(Boolean),
     )];
+    console.log(`[claude] unique app slugs: ${appSlugs.join(", ")}`);
     if (!appSlugs.length) return null;
 
     const accessToken = await getAccessToken();
+    console.log(`[claude] got access token (len=${accessToken?.length})`);
 
     const servers = appSlugs.map((slug) => ({
       type: "url",
@@ -103,9 +106,10 @@ async function buildPipedreamMcpConfig(externalUserId) {
       mcp_server_name: `pd-${slug}`,
     }));
 
+    console.log(`[claude] built ${servers.length} MCP server configs`);
     return { servers, tools };
   } catch (e) {
-    console.error("[claude] mcp config error", e?.message);
+    console.error(`[claude] mcp config error: ${e?.message}`);
     return null;
   }
 }

@@ -8,6 +8,7 @@ import {
   getInstall,
   appendMessage,
   getRecentMessages,
+  clearConversation,
 } from "./db.js";
 import { chat } from "./claude.js";
 import { createConnectToken, listAccountsForUser } from "./pipedream.js";
@@ -81,7 +82,15 @@ app.event("app_mention", async ({ event, say }) => {
 
 async function handleUserMessage({ teamId, userId, text, say }) {
   if (!text) return;
+  const trimmed = text.trim().toLowerCase();
+  // Reset command — wipes conversation history for this user
+  if (trimmed === "/reset" || trimmed === "reset" || trimmed === "/clear" || trimmed === "clear") {
+    await clearConversation(teamId, userId);
+    await say("✓ Conversation memory wiped. Fresh start. What do you need?");
+    return;
+  }
   try {
+    console.log(`[pulse] message from ${teamId}:${userId} — "${text.slice(0, 80)}"`);
     const history = await getRecentMessages(teamId, userId, 20);
     await appendMessage(teamId, userId, "user", text);
     const externalUserId = `slack:${teamId}:${userId}`;

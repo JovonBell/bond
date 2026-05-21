@@ -87,3 +87,10 @@ export async function getRecentMessages(teamId, userId, limit = 20) {
   );
   return rows.reverse();
 }
+
+export async function clearConversation(teamId, userId) {
+  await pool.query(
+    `DELETE FROM conversations WHERE team_id=$1 AND user_id=$2`,
+    [teamId, userId],
+  );
+}
