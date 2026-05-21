@@ -5,3 +5,6 @@ node_modules/
 .DS_Store
 .vscode/
 .idea/
+
+# Generated decks (ephemeral, written at runtime)
+public/decks/*.html

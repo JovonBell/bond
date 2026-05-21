@@ -1,4 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { buildMcpUrl, listAccountsCached, getCachedAccessToken } from "./pipedream.js";
 import * as db from "./db.js";
 import { computeNextRun, validateCron } from "./routines.js";
@@ -32,10 +35,15 @@ You live in the user's Slack workspace and remember conversations. You can:
    - Cron is 5 fields in UTC: minute hour day-of-month month day-of-week.
    - Default user timezone is America/New_York (EST/EDT). Convert: 8am EST = 13:00 UTC; 8am EDT = 12:00 UTC. Currently in DAYLIGHT TIME so add 4 hours to EST hours.
    - Example: "every Monday at 8am" → "0 12 * * 1" (during EDT) or "0 13 * * 1" (during EST).
+3. BUILD PRESENTATIONS via the create_presentation native tool. When the user asks for a deck, slides, or a presentation (e.g., "make me a deck on X", "presentation from my last meeting with Y"):
+   a. FETCH the source material first — Calendar for events, Fathom for meeting transcripts, Gmail/Drive for docs. Use real data, not invented content.
+   b. SYNTHESIZE into 5–10 slides. One idea per slide. Punchy title slide. End with action items / next steps.
+   c. CALL create_presentation with reveal.js <section>...</section> syntax. Pulse wraps it in a polished dark theme.
+   d. REPLY with just a one-line confirmation + the URL. Example: "Done. 7 slides → {url}". Do NOT paste the slide HTML into Slack.
 
 Rules:
 - If the user asks you to take an action and you have a tool for it, USE THE TOOL. Don't just describe what you'd do.
-- For destructive actions (send email, delete, post publicly), confirm with the user first.
+- For destructive actions (send email, delete, post publicly), confirm with the user first. Creating a presentation is NOT destructive — just do it.
 - Style: punchy, no fluff. Markdown sparingly. Default to 1-3 sentence answers unless depth is asked for.
 - When you create or modify a routine, confirm what you did and translate the cron into human-readable English.`;
 }
@@ -87,7 +95,116 @@ const ROUTINE_TOOLS = [
       required: ["id"],
     },
   },
+  {
+    name: "create_presentation",
+    description: `Generate a polished, shareable HTML slide deck. Use this whenever the user asks for a presentation, deck, slides, or "make me a deck."
+
+How to use it:
+- Write the slides as raw <section>...</section> blocks (reveal.js syntax). Each <section> is one slide.
+- Pulse wraps your content in a sleek dark-themed presentation template and returns a public URL.
+- Keep it tight: 5–10 slides max. One idea per slide. Lead with a punchy title slide. End with action items / next steps.
+- Use <h1> for the title slide, <h2> for section headers, <p> and <ul><li> for body content. Avoid heavy inline styles — the template handles styling.
+- The tool returns a URL. Send the URL to the user. Do NOT paste the slide HTML into Slack.`,
+    input_schema: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description: "Short presentation title (used in the browser tab and as a filename hint). e.g. 'Chloe sync — May 21'.",
+        },
+        slides_html: {
+          type: "string",
+          description: "The slide content as <section>...</section> blocks. Example: '<section><h1>Q3 recap</h1><p>Strong quarter</p></section><section><h2>Wins</h2><ul><li>Closed Acme</li></ul></section>'",
+        },
+      },
+      required: ["title", "slides_html"],
+    },
+  },
 ];
+
+function wrapDeckHtml(title, slidesHtml) {
+  const safeTitle = String(title || "Pulse Deck").replace(/[<>]/g, "");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${safeTitle}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/black.css" id="theme" />
+  <style>
+    :root { --accent: #7c5cff; }
+    html, body { background: #0a0a0f; }
+    .reveal {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+      letter-spacing: -0.01em;
+    }
+    .reveal h1, .reveal h2, .reveal h3 {
+      color: #fff;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4em;
+    }
+    .reveal h1 { font-size: 3.4em; line-height: 1.05; }
+    .reveal h2 { font-size: 2.2em; line-height: 1.1; }
+    .reveal h3 { font-size: 1.4em; color: var(--accent); }
+    .reveal p, .reveal li { color: #d6d6e0; font-size: 1.1em; line-height: 1.5; }
+    .reveal .slides section { text-align: left; padding: 0 4%; }
+    .reveal .slides section.title-slide,
+    .reveal .slides > section:first-child { text-align: center; }
+    .reveal ul { display: block; margin-left: 1em; }
+    .reveal li + li { margin-top: 0.45em; }
+    .reveal strong { color: #fff; }
+    .reveal em { color: var(--accent); font-style: normal; }
+    .reveal a { color: var(--accent); }
+    .reveal blockquote {
+      border-left: 3px solid var(--accent);
+      padding: 0.2em 1em;
+      background: rgba(124,92,255,0.06);
+      font-style: normal;
+    }
+    .reveal .progress { color: var(--accent); }
+    .reveal .controls { color: var(--accent); }
+    .pulse-watermark {
+      position: fixed;
+      bottom: 14px;
+      right: 18px;
+      font-family: -apple-system, "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      z-index: 100;
+    }
+    .pulse-watermark .dot { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+${slidesHtml}
+    </div>
+  </div>
+  <div class="pulse-watermark">made by pulse <span class="dot">●</span></div>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      transition: "slide",
+      slideNumber: "c/t",
+    });
+  </script>
+</body>
+</html>`;
+}
+
+async function generateDeckId() {
+  return crypto.randomBytes(6).toString("hex");
+}
 
 async function executeRoutineTool(name, input, ctx) {
   const { teamId, userId } = ctx;
@@ -127,6 +244,23 @@ async function executeRoutineTool(name, input, ctx) {
     case "delete_routine": {
       const ok = await db.deleteRoutine(input.id, teamId, userId);
       return ok ? { ok: true, deleted: input.id } : { ok: false, error: "Routine not found or not yours." };
+    }
+    case "create_presentation": {
+      const slides = String(input.slides_html || "").trim();
+      if (!slides) return { ok: false, error: "slides_html is required and must contain at least one <section>...</section> block." };
+      const id = await generateDeckId();
+      const html = wrapDeckHtml(input.title, slides);
+      const dir = path.join(process.cwd(), "public", "decks");
+      try {
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(path.join(dir, `${id}.html`), html, "utf8");
+      } catch (e) {
+        return { ok: false, error: `Failed to write deck: ${e.message}` };
+      }
+      const base = process.env.APP_URL || "";
+      const url = `${base.replace(/\/$/, "")}/decks/${id}.html`;
+      const slideCount = (slides.match(/<section[\s>]/gi) || []).length;
+      return { ok: true, id, title: input.title, url, slides: slideCount };
     }
   }
   return { ok: false, error: `Unknown tool: ${name}` };
