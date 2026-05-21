@@ -53,20 +53,29 @@ export async function chat({ history, newMessage, externalUserId }) {
 
   let response;
   if (mcpConfig) {
-    request.mcp_servers = mcpConfig.servers;
-    request.tools = mcpConfig.tools;
-    response = await client.beta.messages.create(
-      { ...request, betas: ["mcp-client-2025-11-20"] },
-    );
+    try {
+      console.log(`[claude] calling beta API with ${mcpConfig.servers.length} MCP servers`);
+      response = await client.beta.messages.create({
+        ...request,
+        mcp_servers: mcpConfig.servers,
+        tools: mcpConfig.tools,
+        betas: ["mcp-client-2025-11-20"],
+      });
+    } catch (e) {
+      console.error(`[claude] beta MCP call failed: ${e?.message}`, e?.status, e?.error);
+      // Fallback to plain chat so the user still gets a response.
+      response = await client.messages.create(request);
+    }
   } else {
     response = await client.messages.create(request);
   }
 
-  return response.content
+  const text = response.content
     .filter((b) => b.type === "text")
     .map((b) => b.text)
     .join("\n")
-    .trim() || "(no response)";
+    .trim();
+  return text || "(I got your message but didn't generate a response — check the logs)";
 }
 
 async function buildPipedreamMcpConfig(externalUserId) {
