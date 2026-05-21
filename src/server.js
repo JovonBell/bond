@@ -66,29 +66,48 @@ app.message(async ({ message, say, client }) => {
     teamId: message.team || (await client.auth.test()).team_id,
     userId: message.user,
     text: message.text || "",
+    channel: message.channel,
+    ts: message.ts,
     say,
+    client,
   });
 });
 
-app.event("app_mention", async ({ event, say }) => {
+app.event("app_mention", async ({ event, say, client }) => {
   const cleaned = (event.text || "").replace(/<@[A-Z0-9]+>/g, "").trim();
   await handleUserMessage({
     teamId: event.team,
     userId: event.user,
     text: cleaned,
+    channel: event.channel,
+    ts: event.ts,
     say,
+    client,
   });
 });
 
-async function handleUserMessage({ teamId, userId, text, say }) {
+async function handleUserMessage({ teamId, userId, text, channel, ts, say, client }) {
   if (!text) return;
   const trimmed = text.trim().toLowerCase();
-  // Reset command — wipes conversation history for this user
   if (trimmed === "/reset" || trimmed === "reset" || trimmed === "/clear" || trimmed === "clear") {
     await clearConversation(teamId, userId);
     await say("✓ Conversation memory wiped. Fresh start. What do you need?");
     return;
   }
+
+  const reactionName = "hourglass_flowing_sand";
+  let reactionAdded = false;
+  // Drop the thinking reaction immediately so the user sees Pulse is on it
+  if (client && channel && ts) {
+    try {
+      await client.reactions.add({ name: reactionName, channel, timestamp: ts });
+      reactionAdded = true;
+    } catch (e) {
+      // Non-fatal — likely already-reacted or missing scope
+      console.warn(`[pulse] reaction add failed: ${e?.data?.error || e?.message}`);
+    }
+  }
+
   try {
     console.log(`[pulse] message from ${teamId}:${userId} — "${text.slice(0, 80)}"`);
     const history = await getRecentMessages(teamId, userId, 20);
@@ -100,6 +119,14 @@ async function handleUserMessage({ teamId, userId, text, say }) {
   } catch (e) {
     console.error("[pulse] handler error", e);
     await say(`oof, something broke: ${e.message}`);
+  } finally {
+    if (reactionAdded && client && channel && ts) {
+      try {
+        await client.reactions.remove({ name: reactionName, channel, timestamp: ts });
+      } catch (e) {
+        console.warn(`[pulse] reaction remove failed: ${e?.data?.error || e?.message}`);
+      }
+    }
   }
 }
 

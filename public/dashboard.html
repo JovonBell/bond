@@ -3,267 +3,312 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0A0A0A" />
-  <title>Pulse · Dashboard</title>
+  <meta name="theme-color" content="#000" />
+  <title>Pulse · Galaxy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0A0A0A;
-      --bg-elev: #111;
-      --bg-card: #141414;
-      --bg-card-2: #1A1A1A;
-      --border: #1F1F1F;
+      --bg: #000;
+      --bg-elev: #0A0A0A;
+      --bg-card: #111;
+      --border: #1A1A1A;
       --border-hover: #2A2A2A;
       --text: #FAFAFA;
-      --text-dim: #A3A3A3;
+      --text-dim: #999;
       --text-muted: #525252;
       --accent: #8B5CF6;
       --accent-2: #3B82F6;
       --green: #14F195;
-      --red: #EF4444;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-    body { min-height: 100vh; }
-    code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; height: 100%; }
+    body { position: relative; }
 
-    .bg-blob { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-    .bg-blob::before {
-      content: ''; position: absolute;
-      top: 0; left: 50%; transform: translate(-50%, -30%);
-      width: 900px; height: 600px;
-      background: radial-gradient(ellipse, rgba(139, 92, 246, 0.12) 0%, transparent 60%);
-      filter: blur(60px);
+    /* ====== STAR FIELD BACKGROUND ====== */
+    .stars, .stars2 {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    }
+    .stars { background-image:
+      radial-gradient(2px 2px at 20% 30%, #fff 0%, transparent 50%),
+      radial-gradient(1px 1px at 60% 70%, #fff 0%, transparent 50%),
+      radial-gradient(1px 1px at 50% 50%, #fff 0%, transparent 50%),
+      radial-gradient(2px 2px at 80% 10%, #fff 0%, transparent 50%),
+      radial-gradient(1px 1px at 40% 80%, #fff 0%, transparent 50%),
+      radial-gradient(1px 1px at 10% 60%, #fff 0%, transparent 50%),
+      radial-gradient(1px 1px at 90% 40%, #fff 0%, transparent 50%);
+      background-size: 600px 600px;
+      opacity: 0.45;
+      animation: drift 240s linear infinite;
+    }
+    .stars2 { background-image:
+      radial-gradient(1px 1px at 25% 25%, rgba(139,92,246,0.8) 0%, transparent 50%),
+      radial-gradient(1px 1px at 75% 75%, rgba(59,130,246,0.6) 0%, transparent 50%),
+      radial-gradient(1px 1px at 55% 35%, rgba(255,255,255,0.6) 0%, transparent 50%);
+      background-size: 400px 400px;
+      opacity: 0.5;
+      animation: drift 360s linear infinite reverse;
+    }
+    @keyframes drift {
+      from { transform: translate(0, 0); }
+      to { transform: translate(-600px, -300px); }
     }
 
-    nav {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(10, 10, 10, 0.7);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
+    /* ====== NEBULA GLOW BEHIND CENTER ====== */
+    .nebula {
+      position: fixed; left: 50%; top: 50%;
+      width: 80vmin; height: 80vmin;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle,
+        rgba(139, 92, 246, 0.35) 0%,
+        rgba(59, 130, 246, 0.15) 30%,
+        transparent 65%);
+      filter: blur(40px);
+      pointer-events: none;
+      z-index: 0;
+      animation: nebula-breathe 8s ease-in-out infinite;
     }
-    .nav-inner {
-      max-width: 960px; margin: 0 auto; padding: 16px 24px;
+    @keyframes nebula-breathe {
+      0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+    }
+
+    /* ====== HEADER ====== */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 20px 28px; z-index: 50;
       display: flex; justify-content: space-between; align-items: center;
+      pointer-events: none;
     }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.4px; }
-    .logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s ease-in-out infinite; }
-    @keyframes pulse {
+    .header > * { pointer-events: auto; }
+    .logo-text { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.4px; }
+    .logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); animation: pulse-dot 2s ease-in-out infinite; }
+    @keyframes pulse-dot {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.9); }
+      50% { opacity: 0.5; transform: scale(0.8); }
     }
     .status-pill {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 12px; border-radius: 100px;
-      background: rgba(20, 241, 149, 0.1); border: 1px solid rgba(20, 241, 149, 0.2);
+      padding: 7px 13px; border-radius: 100px;
+      background: rgba(20, 241, 149, 0.08); border: 1px solid rgba(20, 241, 149, 0.2);
       color: var(--green); font-size: 12px; font-weight: 500;
+      backdrop-filter: blur(10px);
     }
-    .status-pill.idle { background: var(--bg-card); border-color: var(--border); color: var(--text-dim); }
     .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+    .status-pill.idle { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); color: var(--text-dim); }
 
-    main {
-      position: relative; z-index: 1;
-      max-width: 960px; margin: 0 auto; padding: 48px 24px 80px;
-      animation: fadeUp 0.5s ease-out;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .hero {
-      margin-bottom: 40px;
-    }
-    .hero h1 { font-size: 40px; font-weight: 700; letter-spacing: -1.2px; margin-bottom: 8px; }
-    .hero p { color: var(--text-dim); font-size: 16px; max-width: 540px; line-height: 1.5; }
-
-    .ok-banner {
-      background: linear-gradient(135deg, rgba(20, 241, 149, 0.1), rgba(20, 241, 149, 0.04));
-      border: 1px solid rgba(20, 241, 149, 0.25);
-      padding: 16px 20px; border-radius: 12px;
-      display: flex; align-items: center; gap: 12px;
-      color: var(--green); font-size: 14px; font-weight: 500;
-      margin-bottom: 32px;
-    }
-    .ok-banner svg { flex-shrink: 0; }
-
-    .section { margin-bottom: 40px; }
-    .section-head {
-      display: flex; justify-content: space-between; align-items: baseline;
-      margin-bottom: 16px;
-    }
-    .section-head h2 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); }
-    .section-head .count { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-
-    .card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 24px;
-    }
-
-    .apps-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;
-    }
-    .app-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px;
-      cursor: pointer; transition: all 0.15s ease;
-      display: flex; flex-direction: column; gap: 10px;
+    /* ====== GALAXY ====== */
+    .galaxy {
       position: relative;
-      text-align: left;
-      color: inherit;
-      font: inherit;
+      width: 100vw; height: 100vh;
+      z-index: 1;
     }
-    .app-card:hover { border-color: var(--border-hover); transform: translateY(-2px); background: var(--bg-card-2); }
-    .app-icon {
-      width: 36px; height: 36px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 16px; color: #fff;
-      overflow: hidden;
-    }
-    .app-icon img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
-    .app-name { font-size: 14px; font-weight: 600; }
-    .app-status { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
-    .app-status.connected { color: var(--green); }
-    .app-status .s-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 
-    .custom-row {
-      display: flex; gap: 8px; margin-top: 16px;
+    /* Orbit rings - SVG drawn dynamically */
+    .orbits-svg {
+      position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0.4;
     }
-    .custom-row input {
-      flex: 1; background: var(--bg); border: 1px solid var(--border);
-      color: var(--text); padding: 12px 14px; border-radius: 8px;
-      font-size: 14px; font-family: inherit;
-      transition: border-color 0.15s ease;
+    .orbits-svg circle {
+      fill: none;
+      stroke: rgba(255,255,255,0.08);
+      stroke-width: 1;
+      stroke-dasharray: 2 6;
     }
-    .custom-row input:focus { outline: none; border-color: var(--accent); }
-    .custom-row input::placeholder { color: var(--text-muted); }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 18px; border-radius: 8px;
-      font-weight: 600; font-size: 14px; cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.15s ease;
+
+    /* Center orb (Pulse logo) */
+    .core {
+      position: absolute; left: 50%; top: 50%;
+      width: 140px; height: 140px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff 0%, var(--accent) 35%, var(--accent-2) 100%);
+      box-shadow:
+        0 0 60px rgba(139, 92, 246, 0.8),
+        0 0 120px rgba(139, 92, 246, 0.4),
+        inset -10px -10px 30px rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      animation: core-pulse 4s ease-in-out infinite;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+    .core:hover { transform: translate(-50%, -50%) scale(1.05); }
+    .core.drop-target {
+      box-shadow:
+        0 0 80px rgba(20, 241, 149, 1),
+        0 0 160px rgba(20, 241, 149, 0.6);
+      animation: core-attract 0.8s ease-in-out infinite;
+    }
+    @keyframes core-pulse {
+      0%, 100% { box-shadow: 0 0 60px rgba(139, 92, 246, 0.8), 0 0 120px rgba(139, 92, 246, 0.4), inset -10px -10px 30px rgba(0,0,0,0.4); }
+      50% { box-shadow: 0 0 80px rgba(139, 92, 246, 1), 0 0 160px rgba(139, 92, 246, 0.5), inset -10px -10px 30px rgba(0,0,0,0.4); }
+    }
+    @keyframes core-attract {
+      0%, 100% { transform: translate(-50%, -50%) scale(1.05); }
+      50% { transform: translate(-50%, -50%) scale(1.15); }
+    }
+    .core-text {
+      font-weight: 800; font-size: 22px; letter-spacing: -1px;
+      color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    /* Planets (apps) */
+    .planet {
+      position: absolute; left: 50%; top: 50%;
+      width: 52px; height: 52px;
+      margin-left: -26px; margin-top: -26px;
+      border-radius: 12px;
+      cursor: grab;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px; color: #fff;
+      transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+      will-change: transform;
+      overflow: hidden;
+      z-index: 5;
+    }
+    .planet:hover { z-index: 11; }
+    .planet img { width: 100%; height: 100%; object-fit: contain; padding: 9px; pointer-events: none; }
+    .planet.dragging { cursor: grabbing; z-index: 100; transition: none; filter: brightness(1.4); }
+    .planet.connected {
+      box-shadow: 0 0 18px currentColor, inset 0 0 0 1.5px rgba(255,255,255,0.4);
+      filter: brightness(1.1);
+    }
+    .planet:not(.connected) { filter: brightness(0.55) saturate(0.7); }
+    .planet:not(.connected):hover { filter: brightness(1); transform: scale(1.15); }
+
+    .planet-label {
+      position: absolute;
+      top: 100%; left: 50%; transform: translateX(-50%);
+      margin-top: 8px;
+      font-size: 11px; font-weight: 500; color: var(--text-dim);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0; transition: opacity 0.2s ease;
+    }
+    .planet:hover .planet-label { opacity: 1; }
+    .planet.connected .planet-label { color: var(--green); opacity: 0.9; }
+
+    /* Connection lines (SVG) */
+    .links { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+    .link {
+      stroke: var(--green); stroke-width: 1;
+      stroke-dasharray: 3 6;
+      opacity: 0.5;
+      animation: link-flow 3s linear infinite;
+    }
+    @keyframes link-flow {
+      to { stroke-dashoffset: -36; }
+    }
+
+    /* ====== BOTTOM PANEL ====== */
+    .panel {
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      max-width: 720px; width: calc(100% - 32px);
+      background: rgba(15, 15, 15, 0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 20px;
+      z-index: 40;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .panel-hint { font-size: 13px; color: var(--text-dim); flex: 1; }
+    .panel-hint b { color: var(--text); font-weight: 600; }
+    .panel input {
+      flex: 1; background: var(--bg-elev); border: 1px solid var(--border);
+      color: var(--text); padding: 9px 12px; border-radius: 8px;
+      font-size: 13px; font-family: inherit; min-width: 140px;
+    }
+    .panel input:focus { outline: none; border-color: var(--accent); }
+    .panel button {
+      background: #fff; color: #000; border: none;
+      padding: 9px 16px; border-radius: 8px;
+      font-weight: 600; font-size: 13px; cursor: pointer;
       font-family: inherit;
     }
-    .btn-primary { background: #fff; color: #000; }
-    .btn-primary:hover { background: #e5e5e5; }
+    .panel button:hover { background: #e5e5e5; }
 
-    .connected-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-    .connected-item {
-      background: var(--bg-card-2); border: 1px solid var(--border);
-      padding: 12px 16px; border-radius: 10px;
-      display: flex; align-items: center; gap: 12px;
+    /* Welcome banner */
+    .welcome {
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+      background: rgba(20, 241, 149, 0.1);
+      border: 1px solid rgba(20, 241, 149, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 10px 18px; border-radius: 100px;
+      color: var(--green); font-size: 13px; font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+      z-index: 40;
+      animation: drop-in 0.5s ease-out;
     }
-    .connected-item .ci-icon {
-      width: 32px; height: 32px; border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 14px; color: #fff;
-      overflow: hidden;
-    }
-    .connected-item .ci-icon img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
-    .connected-item .ci-name { font-size: 14px; font-weight: 600; flex: 1; }
-    .connected-item .ci-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); }
-    .empty {
-      text-align: center; padding: 32px 16px;
-      color: var(--text-muted); font-size: 13px;
-      border: 1px dashed var(--border); border-radius: 10px;
-      margin-top: 16px;
+    @keyframes drop-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    .howto { list-style: none; counter-reset: step; }
-    .howto li {
-      counter-increment: step;
-      padding: 14px 14px 14px 52px; position: relative;
-      border-bottom: 1px solid var(--border);
-      font-size: 14px; color: var(--text-dim); line-height: 1.5;
+    /* Connecting toast */
+    .toast {
+      position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      padding: 14px 22px; border-radius: 12px;
+      color: #fff; font-weight: 500; font-size: 14px;
+      z-index: 60;
+      backdrop-filter: blur(10px);
+      animation: toast-in 0.3s ease-out;
     }
-    .howto li:last-child { border-bottom: none; }
-    .howto li::before {
-      content: counter(step);
-      position: absolute; left: 16px; top: 14px;
-      width: 24px; height: 24px; border-radius: 50%;
-      background: var(--bg-card-2); border: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 600; color: var(--text);
-    }
-    .howto b { color: var(--text); }
-    .howto code {
-      background: var(--bg-card-2); border: 1px solid var(--border);
-      padding: 2px 6px; border-radius: 4px;
-      color: var(--accent);
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    footer {
-      max-width: 960px; margin: 40px auto 24px; padding: 0 24px;
-      color: var(--text-muted); font-size: 12px;
-      display: flex; justify-content: space-between; align-items: center;
-      border-top: 1px solid var(--border); padding-top: 24px;
+    @media (max-width: 600px) {
+      .core { width: 100px; height: 100px; }
+      .core-text { font-size: 17px; }
+      .panel { padding: 12px 14px; flex-direction: column; align-items: stretch; }
     }
-    footer a { color: var(--text-muted); text-decoration: none; }
-    footer a:hover { color: var(--text); }
   </style>
 </head>
 <body>
-  <div class="bg-blob"></div>
+  <div class="stars"></div>
+  <div class="stars2"></div>
+  <div class="nebula"></div>
 
-  <nav>
-    <div class="nav-inner">
-      <div class="logo">
-        <span class="logo-dot"></span>
-        pulse
-      </div>
-      <div id="statusPill" class="status-pill idle">
-        <span class="dot"></span>
-        <span id="statusText">Not installed</span>
-      </div>
+  <header class="header">
+    <div class="logo-text">
+      <span class="logo-dot"></span>
+      pulse
     </div>
-  </nav>
-
-  <main>
-    <div class="hero">
-      <h1>Your AI coworker is live.</h1>
-      <p>Connect the tools you actually use. Then DM Pulse in Slack and tell it what to do — it'll know which tool to reach for.</p>
+    <div id="statusPill" class="status-pill idle">
+      <span class="dot"></span>
+      <span id="statusText">Not installed</span>
     </div>
+  </header>
 
-    <div id="okBanner" class="ok-banner" style="display:none">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-      Slack install complete. Open Slack → Apps → Pulse → DM it.
+  <div id="welcome" class="welcome" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    Slack install complete — DM Pulse to start
+  </div>
+
+  <div class="galaxy" id="galaxy">
+    <svg class="links" id="links"></svg>
+    <svg class="orbits-svg" id="orbitsSvg" width="800" height="800" viewBox="-400 -400 800 800"></svg>
+    <div class="core" id="core">
+      <div class="core-text">pulse</div>
     </div>
+  </div>
 
-    <div class="section">
-      <div class="section-head">
-        <h2>Connect a tool</h2>
-        <span class="count" id="connectCount">0 connected</span>
-      </div>
-      <div class="apps-grid" id="appsGrid"></div>
-      <div class="custom-row">
-        <input id="customApp" placeholder="or type any Pipedream slug — asana, jira, salesforce, fireflies…" />
-        <button class="btn btn-primary" id="customBtn">Connect</button>
-      </div>
-      <div class="connected-list" id="connected"></div>
-    </div>
-
-    <div class="section">
-      <div class="section-head">
-        <h2>How to use</h2>
-      </div>
-      <div class="card" style="padding: 0;">
-        <ul class="howto">
-          <li>Open Slack. Find <b>Pulse</b> in your sidebar under <b>Apps</b>.</li>
-          <li>DM the bot directly, or <code>@pulse</code> in any channel it's invited to.</li>
-          <li>Ask anything. *"What emails came in today? Summarize my Fathom meetings. Draft a reply to Sarah."* Pulse will use the connected tools to do the actual work.</li>
-          <li>Type <code>/reset</code> to wipe its memory if it gets confused.</li>
-        </ul>
-      </div>
-    </div>
-  </main>
-
-  <footer>
-    <span>v0.1 · running on Claude + Pipedream</span>
-    <a href="/">← back to home</a>
-  </footer>
+  <div class="panel">
+    <span class="panel-hint">
+      <b>Click</b> a planet to connect · <b>Drag</b> any planet to the orb · <b>Custom slug:</b>
+    </span>
+    <input id="customApp" placeholder="asana, jira, fireflies_ai…" />
+    <button id="customBtn">Add</button>
+  </div>
 
   <script>
     const APPS = [
@@ -282,12 +327,12 @@
       { slug: 'fireflies_ai',     name: 'Fireflies',      si: null,              color: '#FFD43B' },
       { slug: 'attio',            name: 'Attio',          si: null,              color: '#3B82F6' },
       { slug: 'loom',             name: 'Loom',           si: null,              color: '#625DF5' },
-      { slug: 'cal_com',          name: 'Cal.com',        si: null,              color: '#000000' },
+      { slug: 'cal_com',          name: 'Cal.com',        si: null,              color: '#FFFFFF' },
     ];
 
+    // --- identity ---
     const params = new URLSearchParams(window.location.search);
-    if (params.get("installed")) document.getElementById("okBanner").style.display = "flex";
-
+    if (params.get("installed")) document.getElementById("welcome").style.display = "flex";
     const team = params.get("team");
     const user = params.get("user");
     let externalUserId;
@@ -301,47 +346,186 @@
         localStorage.setItem("pulseUserId", externalUserId);
       }
     }
-
-    const statusPill = document.getElementById("statusPill");
-    const statusText = document.getElementById("statusText");
     if (externalUserId.startsWith("slack:")) {
-      statusPill.classList.remove("idle");
-      statusText.textContent = "Slack connected";
+      const sp = document.getElementById("statusPill");
+      sp.classList.remove("idle");
+      document.getElementById("statusText").textContent = "Slack connected";
     }
 
-    function buildAppCard(app, isConnected) {
-      const btn = document.createElement('button');
-      btn.className = 'app-card';
-      btn.dataset.app = app.slug;
+    // --- galaxy state ---
+    const galaxy = document.getElementById('galaxy');
+    const core = document.getElementById('core');
+    const linksSvg = document.getElementById('links');
+    const orbitsSvg = document.getElementById('orbitsSvg');
 
-      const icon = document.createElement('div');
-      icon.className = 'app-icon';
-      icon.style.background = app.color;
-      if (app.si) {
-        const img = document.createElement('img');
-        img.src = `https://cdn.simpleicons.org/${app.si}/white`;
-        img.alt = '';
-        img.onerror = () => { icon.textContent = app.name[0]; };
-        icon.appendChild(img);
-      } else {
-        icon.textContent = app.name[0];
+    let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    function recenter() { cx = window.innerWidth / 2; cy = window.innerHeight / 2; }
+    window.addEventListener('resize', () => { recenter(); layoutOrbits(); });
+
+    // Planet state
+    const planets = APPS.map((app, i) => ({
+      app,
+      el: null,
+      angle: (i / APPS.length) * Math.PI * 2,
+      radius: 0,
+      speed: 0,
+      orbitIndex: 0,
+      connected: false,
+      dragging: false,
+      dragX: 0, dragY: 0,
+    }));
+
+    function layoutOrbits() {
+      const connected = planets.filter(p => p.connected);
+      const available = planets.filter(p => !p.connected);
+
+      // Connected planets: inner orbit
+      const innerR = Math.min(180, Math.min(window.innerWidth, window.innerHeight) * 0.20);
+      // Available planets: split into 2-3 outer rings
+      const outerRings = available.length > 8 ? 3 : 2;
+      const ringRadii = [];
+      for (let i = 0; i < outerRings; i++) {
+        ringRadii.push(Math.min(window.innerWidth, window.innerHeight) * (0.32 + i * 0.12));
       }
-      btn.appendChild(icon);
 
-      const name = document.createElement('div');
-      name.className = 'app-name';
-      name.textContent = app.name;
-      btn.appendChild(name);
+      connected.forEach((p, i) => {
+        p.radius = innerR;
+        p.angle = (i / Math.max(connected.length, 1)) * Math.PI * 2;
+        p.speed = 0.0008; // slow & graceful for connected
+        p.orbitIndex = 0;
+      });
+      available.forEach((p, i) => {
+        const ringIdx = i % outerRings;
+        p.radius = ringRadii[ringIdx];
+        const inRing = available.filter((_, j) => j % outerRings === ringIdx).length;
+        p.angle = ((i / outerRings) / inRing) * Math.PI * 2 + ringIdx * 0.4;
+        p.speed = 0.0003 + ringIdx * 0.0002;
+        p.orbitIndex = ringIdx + 1;
+      });
 
-      const status = document.createElement('div');
-      status.className = 'app-status' + (isConnected ? ' connected' : '');
-      status.innerHTML = isConnected
-        ? '<span class="s-dot"></span>Connected'
-        : 'Click to connect';
-      btn.appendChild(status);
+      // Redraw orbit rings (SVG)
+      orbitsSvg.innerHTML = '';
+      const rings = [innerR, ...ringRadii];
+      rings.forEach(r => {
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', 0); c.setAttribute('cy', 0);
+        c.setAttribute('r', r);
+        orbitsSvg.appendChild(c);
+      });
+    }
 
-      btn.addEventListener('click', () => connect(app.slug));
-      return btn;
+    function buildPlanetEl(p) {
+      const el = document.createElement('div');
+      el.className = 'planet';
+      el.style.background = p.app.color;
+      el.style.color = p.app.color;
+      if (p.app.si) {
+        const img = document.createElement('img');
+        img.src = `https://cdn.simpleicons.org/${p.app.si}/white`;
+        img.onerror = () => { el.removeChild(img); el.textContent = p.app.name[0]; };
+        el.appendChild(img);
+      } else {
+        el.textContent = p.app.name[0];
+      }
+      const label = document.createElement('div');
+      label.className = 'planet-label';
+      label.textContent = p.app.name;
+      el.appendChild(label);
+
+      // Drag handlers
+      el.addEventListener('mousedown', e => startDrag(p, e));
+      el.addEventListener('touchstart', e => startDrag(p, e.touches[0]), {passive:true});
+      // Click to connect (only if not connected)
+      el.addEventListener('click', e => {
+        if (Math.abs(p.dragDeltaX || 0) < 4 && Math.abs(p.dragDeltaY || 0) < 4) {
+          if (!p.connected) connect(p.app.slug);
+        }
+      });
+      galaxy.appendChild(el);
+      return el;
+    }
+
+    function startDrag(p, evt) {
+      p.dragging = true;
+      p.dragDeltaX = 0; p.dragDeltaY = 0;
+      p.dragX = evt.clientX;
+      p.dragY = evt.clientY;
+      p.el.classList.add('dragging');
+      const move = (e) => {
+        const ev = e.touches ? e.touches[0] : e;
+        p.dragX = ev.clientX;
+        p.dragY = ev.clientY;
+        p.dragDeltaX += 1; p.dragDeltaY += 1;
+        // Highlight core if close enough
+        const dx = ev.clientX - cx, dy = ev.clientY - cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120) core.classList.add('drop-target');
+        else core.classList.remove('drop-target');
+      };
+      const up = (e) => {
+        p.dragging = false;
+        p.el.classList.remove('dragging');
+        core.classList.remove('drop-target');
+        const ev = e.changedTouches ? e.changedTouches[0] : e;
+        const dx = ev.clientX - cx, dy = ev.clientY - cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120 && !p.connected) {
+          connect(p.app.slug);
+        }
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        document.removeEventListener('touchmove', move);
+        document.removeEventListener('touchend', up);
+      };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+      document.addEventListener('touchmove', move, {passive:true});
+      document.addEventListener('touchend', up);
+    }
+
+    function init() {
+      recenter();
+      planets.forEach(p => { p.el = buildPlanetEl(p); });
+      layoutOrbits();
+      requestAnimationFrame(loop);
+    }
+
+    function loop() {
+      planets.forEach(p => {
+        if (!p.dragging) p.angle += p.speed;
+        let x, y;
+        if (p.dragging) {
+          x = p.dragX; y = p.dragY;
+        } else {
+          x = cx + Math.cos(p.angle) * p.radius;
+          y = cy + Math.sin(p.angle) * p.radius;
+        }
+        p.x = x; p.y = y;
+        p.el.style.transform = `translate(${x - cx}px, ${y - cy}px)`;
+      });
+      // Redraw connection lines for connected planets
+      const w = window.innerWidth, h = window.innerHeight;
+      linksSvg.setAttribute('width', w);
+      linksSvg.setAttribute('height', h);
+      linksSvg.innerHTML = '';
+      planets.filter(p => p.connected).forEach(p => {
+        const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        ln.setAttribute('x1', cx); ln.setAttribute('y1', cy);
+        ln.setAttribute('x2', p.x); ln.setAttribute('y2', p.y);
+        ln.setAttribute('class', 'link');
+        linksSvg.appendChild(ln);
+      });
+      requestAnimationFrame(loop);
+    }
+
+    function showToast(msg, duration = 3000) {
+      const old = document.querySelector('.toast');
+      if (old) old.remove();
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      if (duration) setTimeout(() => t.remove(), duration);
     }
 
     async function refreshAccounts() {
@@ -349,61 +533,35 @@
         const r = await fetch(`/api/pipedream/accounts?externalUserId=${encodeURIComponent(externalUserId)}`);
         const { accounts = [] } = await r.json();
         const connectedSlugs = new Set(accounts.map(a => a.app?.name_slug).filter(Boolean));
-
-        const grid = document.getElementById('appsGrid');
-        grid.innerHTML = '';
-        APPS.forEach(app => grid.appendChild(buildAppCard(app, connectedSlugs.has(app.slug))));
-
-        document.getElementById('connectCount').textContent = `${accounts.length} connected`;
-
-        const list = document.getElementById('connected');
-        if (accounts.length === 0) {
-          list.innerHTML = '<div class="empty">No tools connected yet. Pick one above to get started.</div>';
-        } else {
-          list.innerHTML = '';
-          accounts.forEach(a => {
-            const slug = a.app?.name_slug || 'tool';
-            const meta = APPS.find(x => x.slug === slug) || { name: slug, color: '#525252', si: null };
-            const item = document.createElement('div');
-            item.className = 'connected-item';
-            const ic = document.createElement('div');
-            ic.className = 'ci-icon';
-            ic.style.background = meta.color;
-            if (meta.si) {
-              const img = document.createElement('img');
-              img.src = `https://cdn.simpleicons.org/${meta.si}/white`;
-              img.onerror = () => { ic.textContent = meta.name[0]; };
-              ic.appendChild(img);
-            } else {
-              ic.textContent = (meta.name || slug)[0];
-            }
-            item.appendChild(ic);
-            const nm = document.createElement('div'); nm.className = 'ci-name';
-            nm.textContent = meta.name || slug;
-            item.appendChild(nm);
-            const id = document.createElement('div'); id.className = 'ci-id';
-            id.textContent = a.id;
-            item.appendChild(id);
-            list.appendChild(item);
-          });
-        }
+        let changed = false;
+        planets.forEach(p => {
+          const wasConnected = p.connected;
+          p.connected = connectedSlugs.has(p.app.slug);
+          if (wasConnected !== p.connected) {
+            changed = true;
+            p.el.classList.toggle('connected', p.connected);
+          }
+        });
+        if (changed) layoutOrbits();
       } catch (e) { console.error(e); }
     }
 
     async function connect(appSlug) {
       try {
+        showToast(`Opening connect window for ${appSlug}…`, 4000);
         const r = await fetch("/api/pipedream/connect-token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ externalUserId, app: appSlug }),
         });
         const { connectLinkUrl, error } = await r.json();
-        if (error) return alert("Error: " + error);
-        if (!connectLinkUrl) return alert("No connect URL returned.");
+        if (error) return showToast("Error: " + error);
+        if (!connectLinkUrl) return showToast("No connect URL returned.");
         window.open(connectLinkUrl, "_blank", "width=600,height=720");
-        setTimeout(refreshAccounts, 5000);
-        setTimeout(refreshAccounts, 12000);
-      } catch (e) { alert("Network error: " + e.message); }
+        setTimeout(refreshAccounts, 4000);
+        setTimeout(refreshAccounts, 10000);
+        setTimeout(refreshAccounts, 20000);
+      } catch (e) { showToast("Network error: " + e.message); }
     }
 
     document.getElementById("customBtn").addEventListener("click", () => {
@@ -414,8 +572,9 @@
       if (e.key === "Enter") document.getElementById("customBtn").click();
     });
 
+    init();
     refreshAccounts();
-    setInterval(refreshAccounts, 15000); // auto-refresh every 15s
+    setInterval(refreshAccounts, 12000);
   </script>
 </body>
 </html>
