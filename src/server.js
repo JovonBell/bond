@@ -46,8 +46,10 @@ const receiver = new ExpressReceiver({
     redirectUriPath: "/slack/oauth_redirect",
     directInstall: true,
     callbackOptions: {
-      success: (_install, _opts, _req, res) => {
-        res.redirect("/dashboard?installed=1");
+      success: (install, _opts, _req, res) => {
+        const team = install?.team?.id || "";
+        const user = install?.user?.id || "";
+        res.redirect(`/dashboard?installed=1&team=${encodeURIComponent(team)}&user=${encodeURIComponent(user)}`);
       },
     },
   },
@@ -82,7 +84,8 @@ async function handleUserMessage({ teamId, userId, text, say }) {
   try {
     const history = await getRecentMessages(teamId, userId, 20);
     await appendMessage(teamId, userId, "user", text);
-    const reply = await chat(history, text);
+    const externalUserId = `slack:${teamId}:${userId}`;
+    const reply = await chat({ history, newMessage: text, externalUserId });
     await appendMessage(teamId, userId, "assistant", reply);
     await say(reply);
   } catch (e) {

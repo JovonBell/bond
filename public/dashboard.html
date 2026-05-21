@@ -73,10 +73,19 @@
     const params = new URLSearchParams(window.location.search);
     if (params.get("installed")) document.getElementById("ok").style.display = "block";
 
-    let externalUserId = localStorage.getItem("pulseUserId");
-    if (!externalUserId) {
-      externalUserId = "pulse-" + crypto.randomUUID();
+    // If the install flow passed team+user, use them so connections link to the Slack identity.
+    const team = params.get("team");
+    const user = params.get("user");
+    let externalUserId;
+    if (team && user) {
+      externalUserId = `slack:${team}:${user}`;
       localStorage.setItem("pulseUserId", externalUserId);
+    } else {
+      externalUserId = localStorage.getItem("pulseUserId");
+      if (!externalUserId) {
+        externalUserId = "anon-" + crypto.randomUUID();
+        localStorage.setItem("pulseUserId", externalUserId);
+      }
     }
 
     async function refreshAccounts() {
