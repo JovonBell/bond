@@ -1,6 +1,8 @@
 import "dotenv/config";
 import bolt from "@slack/bolt";
 import express from "express";
+import cookieParser from "cookie-parser";
+import crypto from "node:crypto";
 import {
   pool,
   initSchema,
@@ -50,6 +52,9 @@ const receiver = new ExpressReceiver({
       success: (install, _opts, _req, res) => {
         const team = install?.team?.id || "";
         const user = install?.user?.id || "";
+        const name = install?.user?.name || install?.team?.name || "User";
+        // Set session cookie so the dashboard recognizes them
+        setSession(res, { teamId: team, userId: user, name });
         res.redirect(`/dashboard?installed=1&team=${encodeURIComponent(team)}&user=${encodeURIComponent(user)}`);
       },
     },
@@ -130,15 +135,123 @@ async function handleUserMessage({ teamId, userId, text, channel, ts, say, clien
   }
 }
 
-// ----- Express routes (landing page, dashboard, Pipedream) -----
+// ----- Express routes -----
 const expressApp = receiver.app;
 expressApp.use(express.json());
-expressApp.use(express.static("public"));
+expressApp.use(cookieParser());
 
+// ----- Session signing (HMAC-signed cookies, stateless) -----
+const SESSION_SECRET = process.env.SLACK_STATE_SECRET || "pulse-session-secret-change-me";
+const SESSION_COOKIE = "pulse_session";
+
+function signSession(payload) {
+  const json = JSON.stringify(payload);
+  const b64 = Buffer.from(json).toString("base64url");
+  const sig = crypto.createHmac("sha256", SESSION_SECRET).update(b64).digest("base64url");
+  return `${b64}.${sig}`;
+}
+
+function verifySession(token) {
+  if (!token || typeof token !== "string") return null;
+  const [b64, sig] = token.split(".");
+  if (!b64 || !sig) return null;
+  const expected = crypto.createHmac("sha256", SESSION_SECRET).update(b64).digest("base64url");
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(b64, "base64url").toString());
+    if (payload.exp && payload.exp < Date.now()) return null;
+    return payload;
+  } catch { return null; }
+}
+
+function getSession(req) { return verifySession(req.cookies?.[SESSION_COOKIE]); }
+function setSession(res, payload) {
+  const token = signSession({ ...payload, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 });
+  res.cookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+}
+
+// ----- Sign in with Slack (OpenID Connect) -----
+expressApp.get("/auth/slack/start", (req, res) => {
+  const state = crypto.randomBytes(16).toString("hex");
+  res.cookie("pulse_oauth_state", state, { httpOnly: true, secure: true, sameSite: "lax", maxAge: 600000 });
+  const redirect = `${process.env.APP_URL}/auth/slack/callback`;
+  const url = new URL("https://slack.com/openid/connect/authorize");
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "openid email profile");
+  url.searchParams.set("client_id", process.env.SLACK_CLIENT_ID);
+  url.searchParams.set("state", state);
+  url.searchParams.set("redirect_uri", redirect);
+  res.redirect(url.toString());
+});
+
+expressApp.get("/auth/slack/callback", async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    const storedState = req.cookies?.pulse_oauth_state;
+    if (!code || !state || state !== storedState) {
+      return res.status(400).send("Invalid OAuth state.");
+    }
+    const tokenResp = await fetch("https://slack.com/api/openid.connect.token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: process.env.SLACK_CLIENT_ID,
+        client_secret: process.env.SLACK_CLIENT_SECRET,
+        code,
+        redirect_uri: `${process.env.APP_URL}/auth/slack/callback`,
+        grant_type: "authorization_code",
+      }),
+    });
+    const tokenJson = await tokenResp.json();
+    if (!tokenJson.ok) {
+      console.error("[auth] token exchange failed", tokenJson);
+      return res.status(400).send(`Auth failed: ${tokenJson.error || "unknown"}`);
+    }
+    // Decode the id_token (it's a JWT) to extract user info
+    const idToken = tokenJson.id_token;
+    const payloadB64 = idToken.split(".")[1];
+    const userInfo = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
+    const teamId = userInfo["https://slack.com/team_id"];
+    const userId = userInfo["https://slack.com/user_id"];
+    const name = userInfo.name || userInfo.given_name || "User";
+    const email = userInfo.email;
+    const picture = userInfo["https://slack.com/user_image_192"] || userInfo.picture;
+    setSession(res, { teamId, userId, name, email, picture });
+    res.clearCookie("pulse_oauth_state");
+    res.redirect("/dashboard");
+  } catch (e) {
+    console.error("[auth] callback error", e);
+    res.status(500).send("Auth error: " + e.message);
+  }
+});
+
+expressApp.post("/auth/logout", (_req, res) => {
+  res.clearCookie(SESSION_COOKIE);
+  res.json({ ok: true });
+});
+
+expressApp.get("/api/me", (req, res) => {
+  const s = getSession(req);
+  if (!s) return res.status(401).json({ error: "not authenticated" });
+  res.json({ teamId: s.teamId, userId: s.userId, name: s.name, email: s.email, picture: s.picture, externalUserId: `slack:${s.teamId}:${s.userId}` });
+});
+
+// Static + page routes (after auth routes so they don't catch /auth/*)
+expressApp.use(express.static("public"));
 expressApp.get("/", (_req, res) => res.sendFile("index.html", { root: "public" }));
-expressApp.get("/dashboard", (_req, res) =>
-  res.sendFile("dashboard.html", { root: "public" }),
-);
+expressApp.get("/login", (_req, res) => res.sendFile("login.html", { root: "public" }));
+expressApp.get("/dashboard", (req, res) => {
+  // Allow first-install path (team+user in URL from Slack install) without a session
+  if (!getSession(req) && !(req.query.team && req.query.user) && !req.query.installed) {
+    return res.redirect("/login");
+  }
+  res.sendFile("dashboard.html", { root: "public" });
+});
 
 // Endpoint the dashboard hits to start a Pipedream Connect session
 expressApp.post("/api/pipedream/connect-token", async (req, res) => {
